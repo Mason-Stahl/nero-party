@@ -58,7 +58,7 @@ function useIsMobile() {
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
-export default function NeroIntro() {
+export default function NeroIntro({ onComplete }) {
   const elapsed  = useElapsed();
   const isMobile = useIsMobile();
   const pos      = isMobile ? POS.mobile : POS.landscape;
@@ -156,7 +156,7 @@ export default function NeroIntro() {
       {/* DIALOG — fades in after animation, always starts at step 1 on mount */}
       {dialogOpacity > 0 && (
         <div style={{ opacity: dialogOpacity, position: "absolute", inset: 0, zIndex: 4 }}>
-          <DialogSequence />
+          <DialogSequence onComplete={onComplete} />
         </div>
       )}
     </div>

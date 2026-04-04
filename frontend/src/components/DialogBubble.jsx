@@ -16,7 +16,15 @@ const BORDER = "rgba(189, 189, 189, 0.35)";
 const ARROW  = 20;
 const R      = 26;
 
-export default function DialogBubble({ mode = "bouncer", text, subtext, children }) {
+/**
+ * Props:
+ *   mode        "bouncer" | "user"
+ *   text        bold heading string
+ *   textInput   optional — renders an inline input after the text on the same line
+ *   subtext     secondary string (optional)
+ *   children    any additional elements rendered below
+ */
+export default function DialogBubble({ mode = "bouncer", text, textInput, subtext, children }) {
   const isBouncer = mode === "bouncer";
 
   return (
@@ -28,7 +36,7 @@ export default function DialogBubble({ mode = "bouncer", text, subtext, children
       borderRadius: R,
       padding: "20px 26px",
       minWidth: 200,
-      maxWidth: 340,
+      maxWidth: 360,
       boxShadow: "0 8px 32px rgba(0,0,0,0.55)",
       marginBottom: isBouncer ? ARROW : 0,
       marginTop:    isBouncer ? 0 : ARROW,
@@ -36,9 +44,12 @@ export default function DialogBubble({ mode = "bouncer", text, subtext, children
 
       {isBouncer ? <BouncerArrow /> : <UserArrow />}
 
-      <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#111", lineHeight: 1.3 }}>
-        {text}
-      </p>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontWeight: 700, fontSize: 16, color: "#111", lineHeight: 1.3 }}>
+          {text}
+        </span>
+        {textInput}
+      </div>
 
       {subtext && (
         <p style={{ margin: "6px 0 0", fontSize: 14, color: "rgba(0, 0, 0, 0.7)", lineHeight: 1.4 }}>

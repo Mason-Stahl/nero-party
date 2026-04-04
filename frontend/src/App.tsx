@@ -1,22 +1,36 @@
 import { useState } from "react";
 // @ts-ignore
 import NeroIntro from "./components/NeroIntro";
+// @ts-ignore
+import StagePage from "./pages/StagePage";
 
-function App() {
-  const [ready, setReady] = useState(false);
+type AppPage = "intro" | "stage";
 
-  if (!ready) {
-    return <NeroIntro onComplete={() => setReady(true)} />;
-  }
+export default function App() {
+  const [page,     setPage]     = useState<AppPage>("intro");
+  const [fadeOut,  setFadeOut]  = useState(false);
+  const [hostData, setHostData] = useState<any>(null);
+
+  const handleIntroComplete = (data: any) => {
+    setHostData(data);
+    setFadeOut(true);                                   // fade to black over 2s
+    setTimeout(() => setPage("stage"), 2000);           // swap page at peak black
+    setTimeout(() => setFadeOut(false), 2200);          // fade back in
+  };
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-gray-900">Nero Party</h1>
-        <p className="mt-2 text-gray-600">Start building here.</p>
-      </div>
-    </div>
+    <>
+      {page === "intro" && <NeroIntro onComplete={handleIntroComplete} />}
+      {page === "stage" && <StagePage hostData={hostData} />}
+
+      <div style={{
+        position: "fixed", inset: 0,
+        backgroundColor: "#000",
+        zIndex: 99999,
+        opacity: fadeOut ? 1 : 0,
+        pointerEvents: "none",
+        transition: "opacity 2s ease",
+      }} />
+    </>
   );
 }
-
-export default App;
