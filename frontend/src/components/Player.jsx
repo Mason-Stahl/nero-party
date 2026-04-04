@@ -66,6 +66,8 @@ export default function Player({ song, isPaused = false, effectiveStartTime = nu
     whenYTReady().then(() => {
       playerRef.current = new window.YT.Player(div, {
         videoId,
+        width: "100%",
+        height: "100%",
         playerVars: {
           autoplay:       1,
           start:          elapsedSec,
