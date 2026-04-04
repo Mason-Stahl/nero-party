@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useParty } from "../context/PartyContext";
 
-export default function AddSong({ partyId, participantId, onAdded }) {
+export default function AddSong({ onAdded }) {
+  const { partyId, participantId } = useParty();
   const [url,       setUrl]       = useState("");
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState(null);

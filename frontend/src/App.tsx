@@ -3,6 +3,8 @@ import { useState } from "react";
 import NeroIntro from "./components/NeroIntro";
 // @ts-ignore
 import StagePage from "./pages/StagePage";
+// @ts-ignore
+import { PartyProvider } from "./context/PartyContext";
 
 type AppPage = "intro" | "stage";
 
@@ -21,7 +23,11 @@ export default function App() {
   return (
     <>
       {page === "intro" && <NeroIntro onComplete={handleIntroComplete} />}
-      {page === "stage" && <StagePage hostData={hostData} />}
+      {page === "stage" && (
+        <PartyProvider data={hostData}>
+          <StagePage />
+        </PartyProvider>
+      )}
 
       <div style={{
         position: "fixed", inset: 0,

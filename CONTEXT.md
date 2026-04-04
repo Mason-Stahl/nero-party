@@ -21,7 +21,6 @@ Use the provided starter repo which includes:
 
 ## src/components 
 ### Main components (TO BUILD)
-**notes** - either eigth or beamed eigth notes. (semiquaver when subtext is necessary) <br> The title of the track or usersname goes in that line that defines eigth note. Or in that line that connects the beamed notes.
 **scoreboard** - 2 options 
 - Bar chart, (easy to understand- on small screen size)
 1. Name [xxxxxx    ] #Points
@@ -31,15 +30,24 @@ Use the provided starter repo which includes:
 #--d-------d---[2.name]-#
 #-------------d-------d-#
 #-----------------------#
-**queue** - barchart, leftmost note is next to be played. Display 5 at a time, with button to show more. 
-*AddSong* - sits inside queue. Textbox to insert URL of youtube video. or *SearchBar* -  pulls from LastFM+MusicBrainz+Discogs for autofill -> converts to youtube link. (to youtube playback will be challange!) (searchbar may be scrapped)
-**history** - where the played songs list and info is: title, artist, duration. Design is more simple. Handwritten-looking history (guitar hero 3 style lined-paper) click on song to open rating box. 
-*rating* - sits inside of history, holds stars and submit button, handles db stuff. *stars* sits inside of rating (1-5 * w/ .5 = rating out of 10). 
 **groupchat** - for fun, send messages with the party. (more components necessary?)
-**Player** - (MAY CHANGE TO ALBUM ART or Thumbnail image) get video feed and display it on a 'tv' in the club. 
-**MixingTable** - Left spinner now playing, right spinner up next (ability to preview up next w/ button). Internal squares manage <br>-auto accept, max song length, Y/N song approval, ban song (prevent spam), group managemenet, - kick from group
 **Hamburger** - Export Playlist, Leave Group
 
+### Main Components (COMPLETE)
+**history** - Guitar Hero 3 lined-paper slide-in drawer. Left-side tab (dog-ear, cream colored, black border) positioned at top 10% for host, vertically centered for guest. Clicking tab slides in a 30vw panel. Songs listed chronologically (#1 at top), numbered left margin, red vertical margin line. Click song to expand inline RatingBox. Panel hides on outside click.
+*RatingBox* - inline within History. Shows artist + duration, "your song" badge + can't-rate-own enforcement. StarRating widget + Rate button → POST /:songId/rate.
+*StarRating* - 0.5-step half-star widget (0.5–5.0 display = 1–10 DB int). readOnly mode for display.
+
+### Helper/Reusable Components (COMPLETE)
+**SlideDrawer** - Generic slide-in panel with dog-ear tab, mounted via React portal. Props: side ("left"|"right"), tabTop (CSS), tabYOffset (CSS), tabLabel, tabSubtext, panelWidth, minWidth, children. Left tabs cut top-right corner; right tabs cut top-left. Uses createPortal to escape StagePage's overflow:hidden stacking context.
+
+### Helper/Formatting/Intro Components (COMPLETE)
+**notes** - either eigth or beamed eigth notes. (semiquaver when subtext is necessary) <br> The title of the track and channel goes in that beam that defines eigth note.
+**queue** - barchart, leftmost note is next to be played. Display 5 at a time, with button to show more. 
+*AddSong* - sits inside queue. Textbox to insert URL of youtube video. or
+(to be built) *SearchBar* -  pulls from LastFM+MusicBrainz+Discogs for autofill -> converts to youtube link. (to youtube playback will be challange!) (searchbar may be scrapped)
+**Player** - (MAY CHANGE TO ALBUM ART or Thumbnail image) get video feed and display it on a 'tv' in the club. 
+**MixingTable** - Left spinner now playing, right spinner up next (ability to preview up next w/ button). Internal squares manage <br>-auto accept, max song length, Y/N song approval, ban song (prevent spam), group managemenet, - kick from group
 
 ### Helper/Formatting/Intro Components (COMPLETE)
 **DialogBubble** - Format intro speech bubble - Visual shell — arrow, border-radius, text, subtext, children slot
@@ -49,14 +57,6 @@ Use the provided starter repo which includes:
 **HostForm** - Dialog bubble element - Builds Joinable Lobby  
 **NeroIntro** - Animation intro sequence management. Renders <DialogSequence /> after pan completes
 **JoinForm** - Dialog bubble elemtn - Lobby search list
-
-### TBD Components
-Lobby Finding - Copy what I did for TTD - just with local storage. 
-
-- steal star ranting from root
-- steal youtube playback from moojik
-- steal ranking from moojik
-- steal lobby from TTD
 
 ## frontend/public/images
 - background.png
@@ -77,7 +77,7 @@ Lobby Finding - Copy what I did for TTD - just with local storage.
 ## dev.db
 Party — joinCode (shareable), host config (maxSongs, timeLimitMin, autoAccept, maxSongLengthSec), status lifecycle
 Participant — ephemeral, no auth, socketId for reconnect, isBanned for kick
-Song — status: pending→queued→playing→played/skipped/banned, position for ordering; addedByParticipantId FK enables rating exclusion rule
+Song — status: pending→queued→playing→played/skipped/banned, position for ordering; addedByParticipantId FK enables rating exclusion rule; startedAt set when status→playing (used for late-join seek + server-restart recovery)
 Rating — 2–10 int (0.5-star steps), unique constraint prevents double-voting
 ChatMessage — displayName denormalized so chat reads don't need a join
 
@@ -91,13 +91,6 @@ ChatMessage — displayName denormalized so chat reads don't need a join
 - client emits `join-party` { partyId, participantId } → socket joins room, socketId saved, broadcasts participants-updated
 - server emits `participants-updated` [{ id, displayName, joinedAt }] to room on join/disconnect
 - disconnect → clears socketId, re-broadcasts
-
-## StagePage (frontend/src/pages/StagePage.jsx)
-- Connects socket on mount, emits join-party with hostData.id + hostData.participantId
-- Listens for participants-updated + queue-updated → state
-- Fetches initial queue via GET on mount
-- Participant panel: top-right, shows groupName, joinCode, live status, participant list (temp — will move to MixingTable)
-- Queue panel: bottom bar, pinned
 
 ## Notes (frontend/src/components/Notes.jsx)
 - SVG staff visualization: 4 horizontal staff lines, songs as beamed eighth note pairs
@@ -120,6 +113,12 @@ ChatMessage — displayName denormalized so chat reads don't need a join
 - YouTube URL input → POST /parties/:partyId/songs
 - Enter key submits; green button when valid; error display inline
 
+## PartyContext (frontend/src/context/PartyContext.jsx)
+- `<PartyProvider data={hostData}>` wraps StagePage in App.tsx once onComplete fires
+- `useParty()` returns `{ partyId, participantId, isHost, joinCode, groupName, hostName, autoAccept, maxSongLengthSec }`
+- All stage components (MixingTable, Player, History, Queue, AddSong) read session identity from context — no prop drilling
+- `isHost` drives layout decisions throughout (History tab position, MixingTable vs Player, etc.)
+
 ## Songs backend (backend/src/routes/songs.ts)
 - GET /parties/:partyId/songs — queued+pending+playing ordered by position
 - POST /parties/:partyId/songs — extract video ID, fetch YouTube Data API v3 metadata (title, artist, thumbnail, duration), create Song, broadcastQueue
@@ -127,17 +126,90 @@ ChatMessage — displayName denormalized so chat reads don't need a join
   - Enforces maxSongs limit, validates participant membership
 - DELETE /parties/:partyId/songs/:songId — host-only ban (sets status="banned")
 - broadcastQueue in broadcast.ts called after add/ban → io.to(partyId).emit("queue-updated", songs)
+- POST /parties/:partyId/songs/advance (host-only):
+  - updateMany flips all playing → played
+  - findFirst on queued ordered by position → update to playing, sets startedAt=now
+  - Calls initPlayback + broadcastPlayback + broadcastQueue
+- See "Songs backend additions" section for approve/reject/pause/resume
 
 ## broadcast.ts (backend/src/broadcast.ts)
 - initBroadcast(io) called once at startup
 - broadcastQueue(partyId) + broadcastParticipants(partyId) — shared helpers used by routes + socket handlers
+- broadcastHistory(partyId) — fetches played songs with ratings[], emits "history-updated" to room
 - Avoids circular imports between index.ts ↔ routes
 
 ## .env (root)
 - PORT=3000
-- YOUTUBE_API_KEY= (get from Google Cloud Console → YouTube Data API v3)
+- YOUTUBE_API_KEY= (got from Google Cloud Console → YouTube Data API v3)
 
 ## Frontend flows
 - HostForm POSTs to backend → onSubmit receives full party + participantId
 - JoinForm fetches GET /parties list, POST /parties/:joinCode/join on selection
-- hostData passed from App → StagePage contains: id, joinCode, groupName, hostName, participantId
+- onComplete fires → App wraps StagePage in <PartyProvider data={hostData}> → all components access session via useParty()
+- host hits ▶ next → backend atomically transitions songs → broadcastQueue + broadcastHistory fire → queue-updated + history-updated socket events update state → Player's currentSong changes → new iframe loads with autoplay=1
+- song moves to played → History panel tab shows updated count → click tab to open → click played song to rate → POST /:songId/rate → broadcastHistory → all clients see updated avg stars
+
+## DiaglogSequence (frontend/src/pages/DialogSequence.jsx)
+- Adds isHost: true to the data passed to onComplete on the host path. 
+- Join flow data never sets it, so it stays falsy.
+
+## Player — (frontend/src/components/Player.jsx)
+
+- Uses YouTube IFrame API (YT.Player JS SDK, not raw iframe src) — loaded once via script tag injection
+- Props: song, isPaused, effectiveStartTime (partyId, participantId, isHost from useParty())
+- On song change: recreates YT.Player with start=elapsedSec (late-join seek)
+- On isPaused change: calls player.pauseVideo() or player.seekTo(elapsed)+playVideo()
+- Info bar badge switches between "NOW PLAYING" (purple) and "PAUSED" (amber)
+- loadYTScript() / whenYTReady() handle idempotent script loading + onYouTubeIframeAPIReady chaining
+
+## MixingTable — (frontend/src/components/MixingTable.jsx)
+
+- Host-only control center, renders in StagePage when isHost=true
+- Props: songs, participants, isPaused, effectiveStartTime (session identity from useParty())
+- Wraps Player (center), with VinylSpinner (left=now playing, right=up next)
+- VinylSpinner: SVG vinyl with groove rings + CSS @keyframes vinyl-spin (4s), stops when no song
+- DrumPad: 64×64 skeuomorphic pad with LED dot; isToggle pads show green/red border; flash=true glows green when action available
+- RotaryDial: 56px knob, click=next / right-click=prev, pointer rotates -130°→+130°
+- Pad grid (2 rows × 4):
+  - Row 1: AUTO-ACCEPT (toggle) | APPROVE SONG | REJECT SONG | ▶ NEXT
+  - Row 2: BAN SONG | KICK USER | ⏸ PAUSE / ▶ PLAY (toggle) | (filler)
+- PARTICIPANT dial: cycles non-host participants; KICK applies to selected
+- MAX LENGTH dial: OFF / 1:00 / 2:00 / 3:00 / 5:00 / 10:00 — PATCHes party on change
+- Pending song info panel shows oldest pending song (APPROVE/REJECT operate on it FIFO)
+
+## Playback sync — broadcast.ts
+
+- partyPlayback: Map<partyId, { effectiveStartTime, isPaused, pausedAt? }> — in-memory per party
+- effectiveStartTime: "virtual" start time that shifts forward by pause duration on each resume
+- Client computes elapsedSec = (Date.now() - effectiveStartTime) / 1000 for seek
+- initPlayback(partyId, startedAt) — called by /advance
+- pausePlayback / resumePlayback — called by /pause and /resume routes
+- broadcastPlayback(partyId) — emits playback-updated to room
+- emitPlaybackToSocket(socketId, partyId) — targeted emit for late-join sync
+- Server restart recovery: join-party handler checks in-memory map; if missing, fetches song.startedAt from DB and calls initPlayback
+
+## Songs backend additions (backend/src/routes/songs.ts)
+
+- POST /advance: now sets song.startedAt = now, calls initPlayback + broadcastPlayback + broadcastHistory
+- POST /:songId/approve — host approves pending song (pending → queued), broadcastQueue
+- POST /:songId/reject — host rejects pending song (pending → banned), broadcastQueue
+- POST /pause — host pauses; calls pausePlayback, broadcastPlayback
+- POST /resume — host resumes; calls resumePlayback (shifts effectiveStartTime), broadcastPlayback
+- GET /history — returns songs with status="played", ordered by startedAt asc, includes ratings[] + addedBy
+- POST /:songId/rate — submit/update rating; body: { participantId, stars (0.5–5.0 float) }; converts to int (×2); anti-abuse: blocks own-song rating; upserts Rating; calls broadcastHistory
+
+## Parties backend additions (backend/src/routes/parties.ts)
+
+- PATCH /:partyId — host updates autoAccept and/or maxSongLengthSec
+- DELETE /:partyId/participants/:pid — host kicks participant (isBanned=true), broadcastParticipants
+
+## StagePage (frontend/src/pages/StagePage.jsx)
+
+- Reads partyId + participantId from useParty() — no hostData prop
+- Connects socket on mount, emits join-party with partyId + participantId
+- Listens for participants-updated + queue-updated + playback-updated + history-updated → state
+- Fetches initial queue + history on mount
+- playback state: { isPaused, effectiveStartTime } — passed to MixingTable (host) and Player (guest)
+- Host: renders MixingTable at min(86vw, 760px), centered
+- Guest: renders Player + participant sidebar (top-right) showing groupName + joinCode from context
+- Both: renders <History songs={history} /> (portal, self-positions via useParty().isHost)

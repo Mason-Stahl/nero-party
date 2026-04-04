@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
+import { broadcastParticipants } from "../broadcast.js";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -131,6 +132,52 @@ router.post("/:joinCode/join", async (req, res) => {
   });
 
   return res.status(201).json({ party, participantId: participant.id });
+});
+
+// PATCH /parties/:partyId — host updates party settings (autoAccept, maxSongLengthSec)
+router.patch("/:partyId", async (req, res) => {
+  const { partyId }                            = req.params;
+  const { participantId, autoAccept, maxSongLengthSec } = req.body;
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party) return res.status(404).json({ error: "Party not found" });
+
+  const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+  if (!participant || participant.displayName !== party.hostName) {
+    return res.status(403).json({ error: "Only the host can update party settings" });
+  }
+
+  const updated = await prisma.party.update({
+    where: { id: partyId },
+    data: {
+      ...(autoAccept       !== undefined && { autoAccept }),
+      ...(maxSongLengthSec !== undefined && { maxSongLengthSec: maxSongLengthSec ?? null }),
+    },
+  });
+
+  return res.json(updated);
+});
+
+// DELETE /parties/:partyId/participants/:pid — host kicks a participant
+router.delete("/:partyId/participants/:pid", async (req, res) => {
+  const { partyId, pid }  = req.params;
+  const { participantId } = req.body;
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party) return res.status(404).json({ error: "Party not found" });
+
+  const requester = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+  if (!requester || requester.displayName !== party.hostName) {
+    return res.status(403).json({ error: "Only the host can kick participants" });
+  }
+
+  await prisma.participant.update({
+    where: { id: pid },
+    data:  { isBanned: true },
+  });
+
+  await broadcastParticipants(partyId);
+  return res.json({ kicked: pid });
 });
 
 export default router;

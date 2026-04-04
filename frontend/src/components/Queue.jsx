@@ -4,7 +4,7 @@ import AddSong from "./AddSong";
 
 const PAGE = 5;
 
-export default function Queue({ songs = [], partyId, participantId }) {
+export default function Queue({ songs = [] }) {
   const [showAll, setShowAll] = useState(false);
 
   const visible = showAll ? songs : songs.slice(0, PAGE);
@@ -43,7 +43,7 @@ export default function Queue({ songs = [], partyId, participantId }) {
       )}
 
       {/* Add song input */}
-      <AddSong partyId={partyId} participantId={participantId} />
+      <AddSong />
     </div>
   );
 }

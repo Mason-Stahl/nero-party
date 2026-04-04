@@ -1,0 +1,29 @@
+.star-rating-container {
+  display: inline-flex;
+  width: 120px; 
+  gap: 4px;
+  cursor: pointer;
+}
+
+.star-container {
+  position: relative;
+  width: 24px; /* adjust as you like */
+  height: 24px;
+}
+
+.star-background,
+.star-foreground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  font-size: 24px;
+  color: #ccc; /* background star color */
+  pointer-events: none;
+}
+
+.star-foreground {
+  color: #1db954; /* the “light blue” or Spotify green color */
+  width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}

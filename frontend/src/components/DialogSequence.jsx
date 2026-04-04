@@ -119,7 +119,7 @@ export default function DialogSequence({ onComplete }) {
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <GlowButton onClick={() => onComplete?.(hostData)}>Let's go →</GlowButton>
+            <GlowButton onClick={() => onComplete?.({ ...hostData, isHost: true })}>Let's go →</GlowButton>
           </div>
         </DialogBubble>
       )}

@@ -4,7 +4,13 @@ import { Server } from "socket.io";
 import cors from "cors";
 import { PrismaClient } from "@prisma/client";
 import { env } from "./env.js";
-import { initBroadcast, broadcastParticipants } from "./broadcast.js";
+import {
+  initBroadcast,
+  broadcastParticipants,
+  getPlaybackState,
+  initPlayback,
+  emitPlaybackToSocket,
+} from "./broadcast.js";
 import partiesRouter from "./routes/parties.js";
 import songsRouter from "./routes/songs.js";
 
@@ -50,6 +56,19 @@ io.on("connection", (socket) => {
     });
 
     await broadcastParticipants(partyId);
+
+    // Restore in-memory playback state from DB if server restarted
+    if (!getPlaybackState(partyId)) {
+      const playing = await prisma.song.findFirst({
+        where: { partyId, status: "playing" },
+      });
+      if (playing?.startedAt) {
+        initPlayback(partyId, playing.startedAt);
+      }
+    }
+    // Send current playback state to the joining socket only
+    emitPlaybackToSocket(socket.id, partyId);
+
     console.log(`${participant.displayName} joined room ${partyId}`);
   });
 
