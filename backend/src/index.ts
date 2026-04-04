@@ -2,10 +2,15 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
+import { PrismaClient } from "@prisma/client";
 import { env } from "./env.js";
+import { initBroadcast, broadcastParticipants } from "./broadcast.js";
+import partiesRouter from "./routes/parties.js";
+import songsRouter from "./routes/songs.js";
 
-const app = express();
+const app    = express();
 const server = createServer(app);
+const prisma = new PrismaClient();
 
 const io = new Server(server, {
   cors: {
@@ -14,20 +19,54 @@ const io = new Server(server, {
   },
 });
 
+initBroadcast(io);
+
 app.use(cors());
 app.use(express.json());
 
-// Health check
-app.get("/health", (req, res) => {
+app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
-// Socket.IO connection handling
+app.use("/parties", partiesRouter);
+app.use("/parties/:partyId/songs", songsRouter);
+
+// ── Socket.IO ─────────────────────────────────────────────────────────────────
+
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
 
-  socket.on("disconnect", () => {
+  socket.on("join-party", async ({ partyId, participantId }: { partyId: string; participantId: string }) => {
+    const participant = await prisma.participant.findFirst({
+      where: { id: participantId, partyId },
+    });
+    if (!participant) return;
+
+    socket.join(partyId);
+
+    await prisma.participant.update({
+      where: { id: participantId },
+      data:  { socketId: socket.id },
+    });
+
+    await broadcastParticipants(partyId);
+    console.log(`${participant.displayName} joined room ${partyId}`);
+  });
+
+  socket.on("disconnect", async () => {
     console.log("Client disconnected:", socket.id);
+
+    const participant = await prisma.participant.findFirst({
+      where: { socketId: socket.id },
+    });
+    if (!participant) return;
+
+    await prisma.participant.update({
+      where: { id: participant.id },
+      data:  { socketId: null },
+    });
+
+    await broadcastParticipants(participant.partyId);
   });
 });
 

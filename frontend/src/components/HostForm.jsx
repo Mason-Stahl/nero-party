@@ -1,8 +1,5 @@
 import { useState } from "react";
 
-// TODO: migrate localStorage to SQLite when backend schema is ready.
-// Schema: parties(id, host_name, group_name, is_private, codeword, vibe, created_at)
-
 const inputStyle = {
   background: "#fff",
   border: "1px solid #ccc",
@@ -84,21 +81,34 @@ export default function HostForm({ name, onSubmit }) {
   const [isPrivate, setIsPrivate] = useState(false);
   const [codeword,  setCodeword]  = useState("");
   const [vibe,      setVibe]      = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState(null);
 
-  const canSubmit = name.trim() && group.trim();
+  const canSubmit = name.trim() && group.trim() && !loading;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
-    const data = {
-      hostName:  name.trim(),
-      groupName: group.trim(),
-      isPrivate,
-      codeword:  isPrivate ? codeword.trim() : null,
-      vibe:      vibe.trim() || null,
-      createdAt: Date.now(),
-    };
-    localStorage.setItem("nero_party_host", JSON.stringify(data));
-    onSubmit(data);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("http://localhost:3000/parties", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          hostName:  name.trim(),
+          groupName: group.trim(),
+          isPrivate,
+          codeword:  isPrivate ? codeword.trim() : undefined,
+          vibe:      vibe.trim() || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error((await res.json()).error ?? "Failed to create party");
+      const { party, participantId } = await res.json();
+      onSubmit({ ...party, participantId });
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -146,6 +156,11 @@ export default function HostForm({ name, onSubmit }) {
         />
       </div>
 
+      {/* error */}
+      {error && (
+        <div style={{ fontSize: 11, color: "#c00", marginTop: 2 }}>{error}</div>
+      )}
+
       {/* submit */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 6 }}>
         <button
@@ -164,7 +179,7 @@ export default function HostForm({ name, onSubmit }) {
             transition: "background 0.2s",
           }}
         >
-          Let us in →
+          {loading ? "..." : "Let us in →"}
         </button>
       </div>
     </div>
