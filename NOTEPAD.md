@@ -114,3 +114,7 @@ Also i would like to export the play history as a playlist, creating a youtube p
 9. Animation Cleaning Up - (Skip Button , new images)
 
 10. Responsive Layout Test
+
+11. Deployable for others
+
+12. Record Video
