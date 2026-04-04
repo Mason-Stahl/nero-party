@@ -46,6 +46,47 @@ export default function DialogSequence({ onComplete }) {
             <WristbandButton variant="host" onClick={() => setStep("host-form")}>Host</WristbandButton>
             <WristbandButton variant="join" onClick={() => setStep("join-list")}>Join</WristbandButton>
           </div>
+          <div style={{ display: "flex", justifyContent: "center", marginTop: 8 }}>
+            <button
+              onClick={() => setStep("learn-more")}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: 12,
+                color: "rgba(0, 0, 0, 0.65)",
+                textDecoration: "underline",
+                textUnderlineOffset: 3,
+                padding: "2px 6px",
+              }}
+            >
+              tell me more
+            </button>
+          </div>
+        </DialogBubble>
+      )}
+
+      {step === "learn-more" && (
+        <DialogBubble
+          mode="bouncer"
+          text="What is Nero Party?"
+          onBack={() => setStep("choice")}
+        >
+          <ul style={{ margin: "4px 0 10px", paddingLeft: 18, fontSize: 13, color: "rgba(0,0,0,0.75)", lineHeight: 1.6 }}>
+            <li>- Listen to music live with your friends</li>
+            <li>- Upload YouTube links to add songs to the queue</li>
+            <li>- Vote on what's been played with history</li>
+            <li>- Chat with your party via groupchat</li>
+          </ul>
+          <p style={{ margin: "0 0 8px", fontSize: 13, color: "rgba(0,0,0,0.75)", lineHeight: 1.5 }}>
+            A host controls playback, determining song restrictions and managing the queue.
+          </p>
+          <p style={{ margin: 0, fontSize: 13, fontWeight: "bold", color: "rgba(0,0,0,0.75)", lineHeight: 1.5 }}>
+            Do you have the best taste? 
+          </p>
+          <p style={{ margin: 0, fontSize: 13, color: "rgba(0,0,0,0.75)", lineHeight: 1.5 }}>
+            Receive the most points throughout the event in the scoreboard, and suggest the highest-voted song to achieve musical glory!
+          </p>
         </DialogBubble>
       )}
 

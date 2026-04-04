@@ -64,7 +64,7 @@ function ParticipantRow({ name, avg, rank, maxAvg, hasScores }) {
   );
 }
 
-export default function Scoreboard({ songs = [], participants = [], connected = false }) {
+export default function Scoreboard({ songs = [], participants = [], connected = false, onLeave }) {
   const { groupName, joinCode } = useParty();
 
   // Per-participant avg across all their played+rated songs
@@ -116,7 +116,7 @@ export default function Scoreboard({ songs = [], participants = [], connected = 
           {connected ? "● live" : "○ connecting…"}
         </span>
         <button
-          onClick={() => window.location.reload()}
+          onClick={onLeave ?? (() => window.location.reload())}
           style={{
             marginLeft:    10,
             padding:       "2px 8px",

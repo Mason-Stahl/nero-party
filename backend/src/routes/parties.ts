@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
-import { broadcastParticipants } from "../broadcast.js";
+import { broadcastParticipants, broadcastPartyEnded } from "../broadcast.js";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -156,6 +156,28 @@ router.patch("/:partyId", async (req, res) => {
   });
 
   return res.json(updated);
+});
+
+// POST /parties/:partyId/end — host ends the party
+router.post("/:partyId/end", async (req, res) => {
+  const { partyId }       = req.params;
+  const { participantId } = req.body;
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party) return res.status(404).json({ error: "Party not found" });
+
+  const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+  if (!participant || participant.displayName !== party.hostName) {
+    return res.status(403).json({ error: "Only the host can end the party" });
+  }
+
+  await prisma.party.update({
+    where: { id: partyId },
+    data:  { status: "ended", endedAt: new Date() },
+  });
+
+  broadcastPartyEnded(partyId);
+  return res.json({ ended: true });
 });
 
 // DELETE /parties/:partyId/participants/:pid — host kicks a participant

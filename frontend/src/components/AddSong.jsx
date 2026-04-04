@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useParty } from "../context/PartyContext";
 
-export default function AddSong({ onAdded }) {
+export default function AddSong({ onAdded, partyEnded = false }) {
   const { partyId, participantId } = useParty();
   const [url,       setUrl]       = useState("");
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState(null);
 
-  const canSubmit = url.trim() && !loading;
+  const canSubmit = url.trim() && !loading && !partyEnded;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
@@ -30,6 +30,17 @@ export default function AddSong({ onAdded }) {
     }
   };
 
+  if (partyEnded) {
+    return (
+      <div style={{
+        fontSize: 11, color: "rgba(255,255,255,0.3)",
+        fontStyle: "italic", padding: "4px 0",
+      }}>
+        The party has ended — submissions are closed.
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", gap: 6 }}>
@@ -40,8 +51,8 @@ export default function AddSong({ onAdded }) {
           placeholder="Paste a YouTube URL..."
           style={{
             flex: 1,
-            background: "rgba(255,255,255,0.15)",
-            border: "1px solid rgba(255,255,255,0.15)",
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.2)",
             borderRadius: 8,
             padding: "6px 12px",
             fontSize: 12,

@@ -88,6 +88,12 @@ export function emitPlaybackToSocket(socketId: string, partyId: string) {
   });
 }
 
+// ── Party ended ──────────────────────────────────────────────────────────────
+
+export function broadcastPartyEnded(partyId: string) {
+  _io.to(partyId).emit("party-ended");
+}
+
 // ── History ───────────────────────────────────────────────────────────────────
 
 export async function broadcastHistory(partyId: string) {

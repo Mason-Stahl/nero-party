@@ -4,7 +4,7 @@ import AddSong from "./AddSong";
 
 const PAGE = 5;
 
-export default function Queue({ songs = [] }) {
+export default function Queue({ songs = [], partyEnded = false }) {
   const [showAll, setShowAll] = useState(false);
 
   const visible = showAll ? songs : songs.slice(0, PAGE);
@@ -22,7 +22,7 @@ export default function Queue({ songs = [] }) {
           <button
             onClick={() => setShowAll((s) => !s)}
             style={{
-              fontSize: 10, color: "rgba(255,255,255,0.4)",
+              fontSize: 10, color: "rgba(255,255,255,0.6)",
               background: "none", border: "none", cursor: "pointer", padding: 0,
             }}
           >
@@ -33,7 +33,7 @@ export default function Queue({ songs = [] }) {
 
       {/* Staff visualization */}
       {songs.length === 0 ? (
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", paddingBottom: 4 }}>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", paddingBottom: 4 }}>
           No songs yet. Add one below.
         </div>
       ) : (
@@ -43,7 +43,7 @@ export default function Queue({ songs = [] }) {
       )}
 
       {/* Add song input */}
-      <AddSong />
+      <AddSong partyEnded={partyEnded} />
     </div>
   );
 }

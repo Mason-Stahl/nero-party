@@ -256,7 +256,7 @@ function RotaryDial({ label, options, idx, onNext, onPrev }) {
 
 // ── MixingTable ───────────────────────────────────────────────────────────────
 
-export default function MixingTable({ songs, participants, isPaused, effectiveStartTime }) {
+export default function MixingTable({ songs, history = [], participants, isPaused, effectiveStartTime }) {
   const { partyId, participantId, joinCode, groupName, autoAccept: initAutoAccept,
           maxSongLengthSec: initMaxLen } = useParty();
 
@@ -265,15 +265,34 @@ export default function MixingTable({ songs, participants, isPaused, effectiveSt
   const pendingSongs = songs.filter(s => s.status === "pending");
   const pendingSong  = pendingSongs[0] ?? null;
 
-  const [autoAccept, setAutoAccept] = useState(initAutoAccept);
+  const [autoAccept, setAutoAccept] = useState(false);
   const [partIdx,    setPartIdx]    = useState(0);
   const [maxLenIdx,  setMaxLenIdx]  = useState(() => {
     const vals = [null, 60, 120, 180, 300, 600];
     const i = vals.indexOf(initMaxLen);
     return i < 0 ? 0 : i;
   });
-  const [loading, setLoading] = useState({});
+  const [loading,     setLoading]    = useState({});
   const setLoad = (key, val) => setLoading(p => ({ ...p, [key]: val }));
+
+  const [showWinner, setShowWinner] = useState(false);
+
+  // Winning song = highest avg rating in history
+  const songScores = history
+    .map(s => {
+      const ratings = s.ratings ?? [];
+      const avg = ratings.length > 0
+        ? ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length / 2
+        : 0;
+      return { ...s, avg };
+    })
+    .filter(s => s.avg > 0)
+    .sort((a, b) => b.avg - a.avg);
+  const winningSong    = songScores[0] ?? null;
+  const winnerPart     = winningSong
+    ? participants.find(p => p.id === winningSong.addedByParticipantId)
+    : null;
+  const winnerName     = winnerPart?.displayName ?? "Unknown";
 
   // Participant dial options (exclude self)
   const kickable    = participants.filter(p => p.id !== participantId);
@@ -329,6 +348,11 @@ export default function MixingTable({ songs, participants, isPaused, effectiveSt
     if (!selectedPart.value) return;
     apiCall("DELETE", `/parties/${partyId}/participants/${selectedPart.value}`, {}, "kick");
     setPartIdx(0);
+  };
+
+  const handleEndParty = async () => {
+    await apiCall("POST", `/parties/${partyId}/end`, {}, "end");
+    setShowWinner(true);
   };
 
   const handlePauseResume = () => {
@@ -413,6 +437,93 @@ export default function MixingTable({ songs, participants, isPaused, effectiveSt
         background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)",
       }} />
 
+      {/* ── Winner Popup ── */}
+      {showWinner && (
+        <div
+          onClick={() => setShowWinner(false)}
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.88)",
+            backdropFilter: "blur(8px)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "linear-gradient(180deg, #1e1e1e 0%, #111 100%)",
+              border: "1px solid rgba(245,197,24,0.45)",
+              borderRadius: 16,
+              padding: "36px 44px",
+              textAlign: "center",
+              boxShadow: "0 8px 60px rgba(245,197,24,0.18), 0 0 0 1px rgba(245,197,24,0.08)",
+              maxWidth: 420,
+              width: "90vw",
+            }}
+          >
+            <div style={{ fontSize: 36, marginBottom: 10 }}>🏆</div>
+            <div style={{
+              fontSize: 9, fontWeight: 800, letterSpacing: "0.24em",
+              color: "rgba(255,255,255,0.35)", marginBottom: 18,
+            }}>
+              PARTY OVER — WINNING SONG
+            </div>
+
+            {winningSong ? (
+              <>
+                <div style={{
+                  fontSize: 22, fontWeight: 800, color: "#f5c518",
+                  marginBottom: 6, lineHeight: 1.2,
+                }}>
+                  {winningSong.title}
+                </div>
+                <div style={{
+                  fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 20,
+                }}>
+                  {winningSong.artist}
+                </div>
+                <div style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "rgba(245,197,24,0.08)",
+                  border: "1px solid rgba(245,197,24,0.2)",
+                  borderRadius: 8, padding: "8px 16px",
+                  marginBottom: 12,
+                }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>submitted by</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{winnerName}</span>
+                </div>
+                <div style={{
+                  fontSize: 16, color: "#f5c518", fontWeight: 700, letterSpacing: "0.05em",
+                }}>
+                  {winningSong.avg.toFixed(1)} ★
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+                No rated songs yet.
+              </div>
+            )}
+
+            <button
+              onClick={() => setShowWinner(false)}
+              style={{
+                marginTop: 28, padding: "8px 24px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.14)",
+                borderRadius: 8, cursor: "pointer",
+                fontSize: 9, fontWeight: 800, letterSpacing: "0.14em",
+                color: "rgba(255,255,255,0.45)",
+              }}
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Controls: pads + pending info + dials ── */}
       <div style={{
         display: "flex",
@@ -467,8 +578,10 @@ export default function MixingTable({ songs, participants, isPaused, effectiveSt
               onClick={handlePauseResume}
               disabled={!currentSong || !!loading.pauseResume}
             />
-            {/* Decorative filler pad */}
-            <DrumPad label="" disabled />
+            <DrumPad
+              label="END" sublabel="PARTY"
+              onClick={handleEndParty}
+            />
           </div>
         </div>
 

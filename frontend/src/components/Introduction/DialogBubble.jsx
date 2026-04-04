@@ -54,8 +54,8 @@ export default function DialogBubble({ mode = "bouncer", text, textInput, subtex
             background: "none",
             border:     "none",
             cursor:     "pointer",
-            fontSize:   14,
-            color:      "rgba(0,0,0,0.3)",
+            fontSize:   16,
+            color:      "rgba(0,0,0,0.5)",
             lineHeight: 1,
             padding:    1,
           }}

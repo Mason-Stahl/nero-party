@@ -4,11 +4,11 @@ import { useParty } from "../context/PartyContext";
 import Queue from "../components/Queue";
 import Player from "../components/Player";
 import MixingTable from "../components/MixingTable";
-import History from "../components/History";
-import GroupChat from "../components/GroupChat";
+import History from "../components/Peripherals/History";
+import GroupChat from "../components/Peripherals/GroupChat";
 import Scoreboard from "../components/Scoreboard";
 
-export default function StagePage() {
+export default function StagePage({ onLeave }) {
   const { partyId, participantId, isHost } = useParty();
 
   const socketRef                       = useRef(null);
@@ -18,8 +18,14 @@ export default function StagePage() {
   const [connected,    setConnected]    = useState(false);
   const [playback,     setPlayback]     = useState({ isPaused: false, effectiveStartTime: null });
   const [messages,     setMessages]     = useState([]);
+  const [partyEnded,   setPartyEnded]   = useState(false);
 
   const currentSong = queue.find((s) => s.status === "playing") ?? null;
+  const [bgHue, setBgHue] = useState(() => Math.floor(Math.random() * 360));
+
+  useEffect(() => {
+    setBgHue(Math.floor(Math.random() * 360));
+  }, [currentSong?.id]);
 
   function handleSendMessage(body) {
     socketRef.current?.emit("send-message", { partyId, participantId, body });
@@ -54,6 +60,7 @@ export default function StagePage() {
     socket.on("playback-updated",     setPlayback);
     socket.on("history-updated",      setHistory);
     socket.on("chat-message", (msg) => setMessages((prev) => [...prev, msg]));
+    socket.on("party-ended",  () => setPartyEnded(true));
     socket.on("disconnect", () => setConnected(false));
 
     return () => socket.disconnect();
@@ -62,7 +69,7 @@ export default function StagePage() {
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
       <img
-        src="/images/stage.png"
+        src="/images/stage2.png"
         alt=""
         aria-hidden="true"
         style={{
@@ -72,6 +79,15 @@ export default function StagePage() {
           objectPosition: "center",
         }}
       />
+
+      {/* Color tint overlay */}
+      <div style={{
+        position:   "absolute", inset: 0,
+        backgroundColor: `hsl(${bgHue}, 40%, 35%)`,
+        opacity:         0.5,
+        transition:      "background-color 1.5s ease",
+        zIndex:     0,
+      }} />
 
       {/* Content layer */}
       <div style={{ position: "relative", zIndex: 1, height: "100%" }}>
@@ -87,6 +103,7 @@ export default function StagePage() {
           }}>
             <MixingTable
               songs={queue}
+              history={history}
               participants={participants}
               isPaused={playback.isPaused}
               effectiveStartTime={playback.effectiveStartTime}
@@ -113,7 +130,7 @@ export default function StagePage() {
         )}
 
         {/* ── Scoreboard (top-center TV) ── */}
-        <Scoreboard songs={history} participants={participants} connected={connected} />
+        <Scoreboard songs={history} participants={participants} connected={connected} onLeave={onLeave} />
 
         {/* ── History (portal, self-positions) ── */}
         <History songs={history} />
@@ -130,7 +147,7 @@ export default function StagePage() {
           borderTop:      "1px solid rgba(255,255,255,0.08)",
           padding:        "14px 20px",
         }}>
-          <Queue songs={queue} />
+          <Queue songs={queue} partyEnded={partyEnded} />
         </div>
 
       </div>

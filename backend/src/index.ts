@@ -103,6 +103,24 @@ io.on("connection", (socket) => {
     });
 
     await broadcastParticipants(participant.partyId);
+
+    // Delete the party after 2 min if still empty
+    const { partyId } = participant;
+    setTimeout(async () => {
+      const online = await prisma.participant.count({
+        where: { partyId, socketId: { not: null } },
+      });
+      if (online > 0) return;
+
+      console.log(`Party ${partyId} empty for 2 min — deleting`);
+      await prisma.rating.deleteMany({
+        where: { song: { partyId } },
+      });
+      await prisma.chatMessage.deleteMany({ where: { partyId } });
+      await prisma.song.deleteMany({ where: { partyId } });
+      await prisma.participant.deleteMany({ where: { partyId } });
+      await prisma.party.delete({ where: { id: partyId } });
+    }, 2 * 60 * 1000);
   });
 });
 

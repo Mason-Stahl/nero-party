@@ -21,7 +21,6 @@ Use the provided starter repo which includes:
 
 ## src/components 
 ### Main components (TO BUILD)
-**Hamburger** - Export Playlist, Leave Group
 
 ### Main components (COMPLETE)
 **groupchat** - Real-time party chat. Right-side SlideDrawer-style portal (custom tab, not DogEar). Tab is a smartphone silhouette SVG with "GROUPCHAT" label and red unread-count badge circle. Tab top position matches History: `top: 10%` for host, `top: 50%` (centered) for guest. Panel slides in from right (320px). Own messages on LEFT (green bubbles), others on RIGHT (dark purple). Display name above each bubble. Input + circular send button at bottom; Enter to send. Unread count increments while closed, resets on open, auto-scrolls to latest.

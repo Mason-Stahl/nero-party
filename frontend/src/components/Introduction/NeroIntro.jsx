@@ -22,8 +22,8 @@ const T = {
 
 // objectPosition % — 0% = left edge, 100% = right edge
 const POS = {
-  landscape: { start: 78, left: 0, right: 100 },
-  mobile:    { start: 60, left: 0, right: 100 },
+  landscape: { start: 66, left: 5, right: 100 },
+  mobile:    { start: 44, left: 12, right: 65 },
 };
 
 function ease(t) {
@@ -59,8 +59,16 @@ function useIsMobile() {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function NeroIntro({ onComplete }) {
-  const elapsed  = useElapsed();
-  const isMobile = useIsMobile();
+  const rawElapsed = useElapsed();
+  const [skipped,  setSkipped] = useState(false);
+  const elapsed    = skipped ? T.panRightEnd + 1200 : rawElapsed;
+  const isMobile   = useIsMobile();
+  const [bgSwapped, setBgSwapped] = useState(false);
+
+  const handleComplete = (data) => {
+    setBgSwapped(true);
+    onComplete?.(data);
+  };
   const pos      = isMobile ? POS.mobile : POS.landscape;
 
   // Beat 1 – Blink
@@ -99,20 +107,45 @@ export default function NeroIntro({ onComplete }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9999, overflow: "hidden" }}>
 
+      {/* SKIP BUTTON */}
+      {!skipped && elapsed < T.panRightEnd + 600 && (
+        <button
+          onClick={() => setSkipped(true)}
+          style={{
+            position:   "absolute", top: 16, right: 20, zIndex: 10,
+            background: "rgba(0,0,0,0.45)",
+            color:      "#fff",
+            border:     "1px solid rgba(255,255,255,0.3)",
+            borderRadius: 6,
+            padding:    "5px 14px",
+            fontSize:   13,
+            cursor:     "pointer",
+          }}
+        >
+          Skip
+        </button>
+      )}
+
       {/* BACKGROUND */}
-      <img
-        src="/images/background.png"
-        alt=""
-        aria-hidden="true"
-        style={{
-          position: "absolute", zIndex: 0,
-          left: 0, bottom: 0,
-          width: "100%",
-          height: isMobile ? "50%" : "100%",
-          objectFit: "cover",
-          objectPosition: `${bgPct}% center`,
-        }}
-      />
+      {[
+        { src: isMobile ? "/images/bg_mobile1.png" : "/images/bg1.png", opacity: bgSwapped ? 0 : 1 },
+        { src: isMobile ? "/images/bg_mobile2.png" : "/images/bg2.png", opacity: bgSwapped ? 1 : 0 },
+      ].map(({ src, opacity }) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute", zIndex: 0,
+            left: 0, bottom: 0,
+            height: '100%',
+            objectFit: "cover",
+            objectPosition: `${bgPct}% center`,
+            opacity,
+          }}
+        />
+      ))}
 
       {/* BLINK */}
       {blinkPhase && (
@@ -131,9 +164,9 @@ export default function NeroIntro({ onComplete }) {
             <img key={n} src={`/images/car${n}.png`} alt="" aria-hidden="true"
               style={{
                 position: "absolute",
-                bottom: 0, left: 0,
-                width: "100%",
-                height: isMobile ? "auto" : "100%",
+                bottom: -2, left: 0,
+                width: isMobile ? "500%" : "100%",
+                height: "102%",
                 objectFit: isMobile ? "fill" : "cover",
                 objectPosition: "center bottom",
                 opacity: carFrame === n ? 1 : 0,
@@ -156,7 +189,7 @@ export default function NeroIntro({ onComplete }) {
       {/* DIALOG — fades in after animation, always starts at step 1 on mount */}
       {dialogOpacity > 0 && (
         <div style={{ opacity: dialogOpacity, position: "absolute", inset: 0, zIndex: 4 }}>
-          <DialogSequence onComplete={onComplete} />
+          <DialogSequence onComplete={handleComplete} />
         </div>
       )}
     </div>

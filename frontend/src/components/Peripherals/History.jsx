@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParty } from "../context/PartyContext";
+import { useParty } from "../../context/PartyContext";
 import SlideDrawer from "./SlideDrawer";
 import StarRating from "./StarRating";
 import Playlist from "./Playlist";
@@ -208,7 +208,7 @@ export default function History({ songs = [] }) {
       side="left"
       tabTop={isHost ? "10%" : "50%"}
       tabYOffset={isHost ? "0" : "-50%"}
-      tabLabel="HISTORY"
+      tabLabel="HISTORY + VOTE"
       tabSubtext={`${count} ${count === 1 ? "song" : "songs"} played`}
     >
       {/* panel header */}
