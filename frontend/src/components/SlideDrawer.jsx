@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 
 const CREAM = "#fdf8e1";
-const EAR   = 14;
+const EAR   = 11;
 
 // ── DogEarTab ─────────────────────────────────────────────────────────────────
 
@@ -14,8 +14,8 @@ function DogEarTab({ label, subtext, side, onClick }) {
     : `polygon(0 0, calc(100% - ${EAR}px) 0, 100% ${EAR}px, 100% 100%, 0 100%)`;
 
   const foldPos = side === "right"
-    ? { top: 0, left: 0, background: "linear-gradient(315deg, rgba(0,0,0,0.18) 50%, transparent 50%)" }
-    : { top: 0, right: 0, background: "linear-gradient(225deg, rgba(0,0,0,0.18) 50%, transparent 50%)" };
+    ? { top: 0, left: 0, background: "linear-gradient(315deg, rgba(0,0,0,0.18) 100%, transparent 50%)" }
+    : { top: 0, right: 0, background: "linear-gradient(225deg, rgba(0,0,0,0.18) 100%, transparent 50%)" };
 
   return (
     <div
@@ -25,6 +25,7 @@ function DogEarTab({ label, subtext, side, onClick }) {
         height:         60,
         background:     CREAM,
         border:         "1px solid #000",
+        borderLeft: "none",
         clipPath,
         cursor:         "pointer",
         position:       "relative",

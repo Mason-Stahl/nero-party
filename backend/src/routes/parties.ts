@@ -180,4 +180,14 @@ router.delete("/:partyId/participants/:pid", async (req, res) => {
   return res.json({ kicked: pid });
 });
 
+// GET /parties/:partyId/messages — fetch chat history for a party
+router.get("/:partyId/messages", async (req, res) => {
+  const { partyId } = req.params;
+  const messages = await prisma.chatMessage.findMany({
+    where:   { partyId },
+    orderBy: { sentAt: "asc" },
+  });
+  return res.json(messages);
+});
+
 export default router;

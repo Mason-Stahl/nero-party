@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParty } from "../context/PartyContext";
 import SlideDrawer from "./SlideDrawer";
 import StarRating from "./StarRating";
+import Playlist from "./Playlist";
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
@@ -216,24 +217,30 @@ export default function History({ songs = [] }) {
         borderBottom: `1px solid ${LINE_CLR}`,
         flexShrink:   0,
         background:   CREAM,
+        display:      "flex",
+        alignItems:   "center",
+        gap:          8,
       }}>
-        <div style={{
-          fontFamily:    "sans-serif",
-          fontSize:      12,
-          fontWeight:    700,
-          letterSpacing: "0.1em",
-          color:         "#333",
-        }}>
-          HISTORY
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontFamily:    "sans-serif",
+            fontSize:      12,
+            fontWeight:    700,
+            letterSpacing: "0.1em",
+            color:         "#333",
+          }}>
+            HISTORY
+          </div>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize:   10,
+            color:      "rgba(0,0,0,0.4)",
+            marginTop:  2,
+          }}>
+            {count} {count === 1 ? "song" : "songs"} played — click to rate
+          </div>
         </div>
-        <div style={{
-          fontFamily: "sans-serif",
-          fontSize:   10,
-          color:      "rgba(0,0,0,0.4)",
-          marginTop:  2,
-        }}>
-          {count} {count === 1 ? "song" : "songs"} played — click to rate
-        </div>
+        <Playlist songs={songs} />
       </div>
 
       {/* song list */}
@@ -259,7 +266,7 @@ export default function History({ songs = [] }) {
 
         {count === 0 ? (
           <div style={{
-            padding:    "20px 16px",
+            padding:    "2px 40px",
             fontFamily: "'Caveat', 'Comic Sans MS', cursive",
             fontSize:   15,
             color:      "rgba(0,0,0,0.3)",

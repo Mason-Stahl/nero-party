@@ -55,6 +55,7 @@ export default function DialogSequence({ onComplete }) {
           text="Hosting. My name is"
           textInput={<NameInput value={name} onChange={setName} />}
           subtext="and my group is..."
+          onBack={() => setStep("choice")}
         >
           <HostForm name={name} onSubmit={handleHostSubmit} />
         </DialogBubble>
@@ -66,6 +67,7 @@ export default function DialogSequence({ onComplete }) {
           text="Joining. My name is"
           textInput={<NameInput value={joinName} onChange={setJoinName} />}
           subtext="pick a group below."
+          onBack={() => setStep("choice")}
         >
           <JoinForm name={joinName} onJoin={handleJoin} />
         </DialogBubble>

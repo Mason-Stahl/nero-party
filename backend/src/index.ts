@@ -72,6 +72,23 @@ io.on("connection", (socket) => {
     console.log(`${participant.displayName} joined room ${partyId}`);
   });
 
+  socket.on("send-message", async ({ partyId, participantId, body }: { partyId: string; participantId: string; body: string }) => {
+    if (!body?.trim()) return;
+    const participant = await prisma.participant.findFirst({
+      where: { id: participantId, partyId, isBanned: false },
+    });
+    if (!participant) return;
+    const message = await prisma.chatMessage.create({
+      data: {
+        partyId,
+        participantId,
+        displayName: participant.displayName,
+        body:        body.trim(),
+      },
+    });
+    io.to(partyId).emit("chat-message", message);
+  });
+
   socket.on("disconnect", async () => {
     console.log("Client disconnected:", socket.id);
 

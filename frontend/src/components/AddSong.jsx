@@ -40,7 +40,7 @@ export default function AddSong({ onAdded }) {
           placeholder="Paste a YouTube URL..."
           style={{
             flex: 1,
-            background: "rgba(255,255,255,0.08)",
+            background: "rgba(255,255,255,0.15)",
             border: "1px solid rgba(255,255,255,0.15)",
             borderRadius: 8,
             padding: "6px 12px",

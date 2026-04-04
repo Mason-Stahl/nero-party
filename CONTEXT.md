@@ -21,22 +21,25 @@ Use the provided starter repo which includes:
 
 ## src/components 
 ### Main components (TO BUILD)
-**scoreboard** - 2 options 
-- Bar chart, (easy to understand- on small screen size)
-1. Name [xxxxxx    ] #Points
-2. Name [xxxx      ] #Points
-- Music Bar chart (more fun/unique, harder to build)
-#---[1.name]------------#
-#--d-------d---[2.name]-#
-#-------------d-------d-#
-#-----------------------#
-**groupchat** - for fun, send messages with the party. (more components necessary?)
 **Hamburger** - Export Playlist, Leave Group
 
+### Main components (COMPLETE)
+**groupchat** - Real-time party chat. Right-side SlideDrawer-style portal (custom tab, not DogEar). Tab is a smartphone silhouette SVG with "GROUPCHAT" label and red unread-count badge circle. Tab top position matches History: `top: 10%` for host, `top: 50%` (centered) for guest. Panel slides in from right (320px). Own messages on LEFT (green bubbles), others on RIGHT (dark purple). Display name above each bubble. Input + circular send button at bottom; Enter to send. Unread count increments while closed, resets on open, auto-scrolls to latest.
+- Socket: client emits `send-message` { partyId, participantId, body } → server validates, persists ChatMessage, broadcasts `chat-message` to room
+- REST: GET /parties/:partyId/messages — fetches full history on mount (ordered sentAt asc)
+- StagePage manages `messages` state, fetches on mount, listens for `chat-message`, passes `onSendMessage` callback to GroupChat
+
+**scoreboard** - Fixed panel at top-center of StagePage (absolute, z=10). Three sections:
+- Top bar: `GROUPNAME · JOINCODE` left, `● live / ○ connecting…` + LEAVE button right. LEAVE reloads page (returns to intro).
+- Score chart: one row per participant, sorted by avg rating desc. Bar width proportional to leader's score. Score = avg stars across all their played songs (DB int ÷ 2). Shows `–` and empty bar until rated.
+- "No scores yet — rate played songs in History" placeholder shown above rows until any participant has a score; disappears once scoring begins. WINNER label appears in header at that point.
+- Props: `songs` (history), `participants`, `connected`. Reads `groupName`/`joinCode` from `useParty()`.
+
 ### Main Components (COMPLETE)
-**history** - Guitar Hero 3 lined-paper slide-in drawer. Left-side tab (dog-ear, cream colored, black border) positioned at top 10% for host, vertically centered for guest. Clicking tab slides in a 30vw panel. Songs listed chronologically (#1 at top), numbered left margin, red vertical margin line. Click song to expand inline RatingBox. Panel hides on outside click.
+**history** - Guitar Hero 3 lined-paper slide-in drawer. Left-side tab (dog-ear, cream colored, black border) positioned at top 10% for host, vertically centered for guest. Clicking tab slides in a 30vw panel. Songs listed chronologically (#1 at top), numbered left margin, red vertical margin line. Click song to expand inline RatingBox. Panel hides on outside click. Header has EXPORT button (top-right) via Playlist component.
 *RatingBox* - inline within History. Shows artist + duration, "your song" badge + can't-rate-own enforcement. StarRating widget + Rate button → POST /:songId/rate.
 *StarRating* - 0.5-step half-star widget (0.5–5.0 display = 1–10 DB int). readOnly mode for display.
+*Playlist* - EXPORT button in History header. Downloads `playlist.json` with `{ name, channel, url }` per played song. Disabled when no songs.
 
 ### Helper/Reusable Components (COMPLETE)
 **SlideDrawer** - Generic slide-in panel with dog-ear tab, mounted via React portal. Props: side ("left"|"right"), tabTop (CSS), tabYOffset (CSS), tabLabel, tabSubtext, panelWidth, minWidth, children. Left tabs cut top-right corner; right tabs cut top-left. Uses createPortal to escape StagePage's overflow:hidden stacking context.
@@ -50,8 +53,8 @@ Use the provided starter repo which includes:
 **MixingTable** - Left spinner now playing, right spinner up next (ability to preview up next w/ button). Internal squares manage <br>-auto accept, max song length, Y/N song approval, ban song (prevent spam), group managemenet, - kick from group
 
 ### Helper/Formatting/Intro Components (COMPLETE)
-**DialogBubble** - Format intro speech bubble - Visual shell — arrow, border-radius, text, subtext, children slot
-**DialogSequence** - State manage ordering of speech bubbles
+**DialogBubble** - Format intro speech bubble - Visual shell — arrow, border-radius, text, subtext, children slot. Optional `onBack` prop: renders a `←` button top-left of bubble.
+**DialogSequence** - State manage ordering of speech bubbles. `host-form` and `join-list` steps pass `onBack={() => setStep("choice")}` to return to Host/Join choice.
 **GlowButton** - Cool looking button - copied from website
 **Writband** - Cool looking button - squmorphic for entry.
 **HostForm** - Dialog bubble element - Builds Joinable Lobby  

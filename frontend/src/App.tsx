@@ -1,6 +1,6 @@
 import { useState } from "react";
 // @ts-ignore
-import NeroIntro from "./components/NeroIntro";
+import NeroIntro from "./components/Introduction/NeroIntro";
 // @ts-ignore
 import StagePage from "./pages/StagePage";
 // @ts-ignore

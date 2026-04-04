@@ -24,7 +24,7 @@ const R      = 26;
  *   subtext     secondary string (optional)
  *   children    any additional elements rendered below
  */
-export default function DialogBubble({ mode = "bouncer", text, textInput, subtext, children }) {
+export default function DialogBubble({ mode = "bouncer", text, textInput, subtext, children, onBack }) {
   const isBouncer = mode === "bouncer";
 
   return (
@@ -43,6 +43,27 @@ export default function DialogBubble({ mode = "bouncer", text, textInput, subtex
     }}>
 
       {isBouncer ? <BouncerArrow /> : <UserArrow />}
+
+      {onBack && (
+        <button
+          onClick={onBack}
+          style={{
+            position:   "absolute",
+            top:        4,
+            left:       24,
+            background: "none",
+            border:     "none",
+            cursor:     "pointer",
+            fontSize:   14,
+            color:      "rgba(0,0,0,0.3)",
+            lineHeight: 1,
+            padding:    1,
+          }}
+          title="Back"
+        >
+          ←
+        </button>
+      )}
 
       <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <span style={{ fontWeight: 700, fontSize: 16, color: "#111", lineHeight: 1.3 }}>
