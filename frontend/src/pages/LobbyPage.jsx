@@ -191,28 +191,23 @@ export default function LobbyPage({ onComplete }) {
       {/* ── Main ── */}
       <main style={{
         flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "32px 16px",
-        gap: 16,
         position: "relative",
         zIndex: 10,
       }}>
 
-        {/* Toggle row */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-          <span style={{ fontSize: 14, color: MUTED, whiteSpace: "nowrap" }}>
-            {showHost ? "Want to join an existing group?" : "Are you the DJ for your group?"}
-          </span>
-          <Btn
-            variant="ghost"
-            onClick={() => { setShowHost(h => !h); setHostError(null); }}
-          >
-            {showHost ? "Join" : "Host"}
-          </Btn>
-        </div>
+        <div style={{
+          position: "absolute",
+          top: "20%",
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "calc(100% - 32px)",
+          maxWidth: 560,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+        }}>
+
+        
 
         {/* Name card — always visible */}
         <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
@@ -325,7 +320,7 @@ export default function LobbyPage({ onComplete }) {
         {showHost && (
           <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
             <div style={{ padding: "0 12px" }}>
-              <Label>NEW PARTY</Label>
+              <Label>HOST A NEW PARTY</Label>
 
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 4 }}>Group name</label>
@@ -385,12 +380,30 @@ export default function LobbyPage({ onComplete }) {
                 onClick={handleHost}
                 style={{ borderRadius: 12 }}
               >
-                {hosting ? "Creating…" : "Let us in →"}
+                {hosting ? "Creating…" : "Let's Go' →"}
               </Btn>
             </div>
           </div>
         )}
 
+        {/* Toggle row */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "30px", gap: 12 }}>
+          <span style={{ fontSize: 14, color: MUTED, whiteSpace: "nowrap" }}>
+            {showHost ? "Or Want to join an existing group?" : "Or Are you the DJ for your group?"}
+          </span>
+          <Btn
+            variant="ghost"
+            onClick={() => { setShowHost(h => !h); setHostError(null); }}
+          >
+            {showHost ? "Join" : "Host"}
+          </Btn>
+        </div>
+
+        </div>
+
+
+
+        
       </main>
 
       {/* ── Learn More modal ── */}
