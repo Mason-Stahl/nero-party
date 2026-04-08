@@ -129,3 +129,13 @@ top - group info
 middle - horizontal scrollwheel queue,
     searchbox
 navbar - [vote, home, groupchat]
+
+### notes
+
+-mobile reponsive move middle NERO PARTY TO left of navbar 
+-green lets go for host - prob remove
+-mobile responsive settings page collapsable left side into hamburger menu
+
+
+-if join from link LobbyPage with just name entry. 
+

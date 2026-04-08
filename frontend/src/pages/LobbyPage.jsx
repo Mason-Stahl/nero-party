@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import Btn from "../components/Btn";
 
 const API = "http://localhost:3000";
-const MUTED = "rgba(255,255,255,0.45)";
+const MUTED = "rgba(255,255,255,0.5)";
 const GREEN = "#4ade80";
 
 // ── Ambient blobs ────────────────────────────────────────────────────────────
@@ -10,30 +10,30 @@ const GREEN = "#4ade80";
 // size { w, h } in px, and blur in px. Opacity is baked into the rgba alpha.
 const BLOBS = [
   {
-    color: "rgba(74,222,128,0.0)",   // green
+    color: "rgba(74,222,128,0.1)",   // green
     top: "-15%", left: "50%",
     transform: "translateX(-45%)",
     w: 600, h: 400,
-    blur: 300,
+    blur: 100,
   },
   {
-    color: "rgba(139,92,246,0.0)",   // purple
+    color: "rgba(139,92,246,0.1)",   // purple
     bottom: "-10%", left: "-10%",
     w: 500, h: 400,
-    blur: 300,
+    blur: 100,
   },
   {
-    color: "rgba(34,211,238,0.0)",   // teal
+    color: "rgba(34,211,238,0.1)",   // teal
     bottom: "10%", right: "-5%",
     w: 380, h: 300,
-    blur: 300,
+    blur: 100,
   },
 ];
 
 // ── Glass card ────────────────────────────────────────────────────────────────
 // inset highlight on top edge gives the "liquid" refraction feel
 const CARD = {
-  background: "rgba(255,255,255,0.04)",
+  background: "rgba(255,255,255,0.05)",
   border: "1px solid rgba(255,255,255,0.1)",
   borderRadius: 16,
   backdropFilter: "blur(28px) saturate(160%)",
@@ -43,7 +43,7 @@ const CARD = {
 
 const inputStyle = {
   width: "100%",
-  background: "rgba(255,255,255,0.07)",
+  background: "rgba(255,255,255,0.08)",
   border: "1px solid rgba(255,255,255,0.12)",
   borderRadius: 10,
   padding: "8px 12px",
@@ -180,7 +180,8 @@ export default function LobbyPage({ onComplete }) {
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
       }}>
-        <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase" }}>
+        <svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" class="w-6 h-6 sm:w-8 sm:h-8 text-foreground transition-all group-hover:[&amp;&gt;path]:animate-flame-flicker" fill="currentColor"><title>logo</title><path fill="currentColor" d="M459.8,911.5c-3.6,0-7.2-.5-10.7-1.5-2.4-.7-58.9-17.4-115-56.7-78.5-55-118.8-127.4-116.4-209.4,2.6-92.5,36.2-146.6,68.6-199.1,40.2-65,78.2-126.3,63-274.7-1.6-15.3,6.2-30,19.7-37.4,13.5-7.4,30.1-5.9,42.1,3.6,9,7.2,219.8,177.4,219.8,377.8s-38.8,150.2-73.1,205.4c-31.5,50.8-58.7,94.6-59.7,154.5-.2,11.9-5.9,23-15.5,30.1-6.6,4.9-14.6,7.5-22.7,7.5ZM428.4,258.3c-5.1,110.2-43,171.4-77.2,226.7-29.6,47.8-55.2,89.1-57.2,161-1.6,55.4,26.1,103.7,82.4,143.6,17.8,12.6,35.8,22.5,51.3,29.9,11.8-54.4,38.8-97.9,65.1-140.3,31.7-51.1,61.6-99.3,61.6-165.1,0-99.8-70.6-195.9-126-255.8h0Z"></path><path fill="currentColor" d="M636.2,781.5c-8.5,0-17-2.8-24.1-8.6-16.3-13.3-18.8-37.3-5.5-53.6.8-1,41.5-52.6,58-131.9,21.8-105-7.2-208.2-86.1-306.8-13.2-16.5-10.5-40.5,6-53.7,16.5-13.2,40.5-10.5,53.7,6,51.7,64.7,85.6,132.9,100.7,202.8,12.2,56.6,12.1,114.2-.3,171.1-21,96.6-70.6,158.1-72.7,160.7-7.6,9.2-18.5,14-29.6,14Z"></path><path fill="currentColor" d="M653.3,915c-11.9,0-23.6-5.5-31.1-16-12.3-17.1-8.4-41,8.8-53.3,1.5-1.1,84.2-62,111.9-151.9,6.2-20.2,27.6-31.5,47.7-25.3,20.2,6.2,31.5,27.6,25.3,47.7-35.5,115.3-136.1,188.4-140.4,191.5-6.7,4.8-14.5,7.1-22.2,7.1Z"></path></svg>
+        <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.18em", textTransform: "lowercase" }}>
           Nero Party
         </span>
         <div style={{ position: "absolute", right: 24 }}>
@@ -207,7 +208,8 @@ export default function LobbyPage({ onComplete }) {
           gap: 16,
         }}>
 
-        
+
+
 
         {/* Name card — always visible */}
         <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
@@ -220,7 +222,10 @@ export default function LobbyPage({ onComplete }) {
             autoFocus
           />
         </div>
+<div></div>
+                <div><p>Join an open party from the list, or host your own and share the code
 
+</p></div>
         {/* Guest list card */}
         {!showHost && (
           <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
@@ -235,7 +240,7 @@ export default function LobbyPage({ onComplete }) {
             {!listLoading && parties.length > 0 && (
               <div style={{
                 maxHeight: 232, overflowY: "auto", paddingLeft: 12, paddingRight: 12,
-                maskImage: "linear-gradient(to bottom, transparent, black 12%, black 88%, transparent)",
+                maskImage: "linear-gradient(to bottom, transparent, black 6%, black 92%, transparent)",
                 WebkitMaskImage: "linear-gradient(to bottom, transparent, black 12%, black 88%, transparent)",
               }}>
                 {parties.map((party) => {
@@ -373,14 +378,14 @@ export default function LobbyPage({ onComplete }) {
               )}
 
               <Btn
-                variant="primary"
+                variant="ghost"
                 size="lg"
                 fullWidth
                 disabled={!canHost}
                 onClick={handleHost}
                 style={{ borderRadius: 12 }}
               >
-                {hosting ? "Creating…" : "Let's Go' →"}
+                {hosting ? "Creating…" : "Let's Go →"}
               </Btn>
             </div>
           </div>
@@ -389,7 +394,7 @@ export default function LobbyPage({ onComplete }) {
         {/* Toggle row */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: "30px", gap: 12 }}>
           <span style={{ fontSize: 14, color: MUTED, whiteSpace: "nowrap" }}>
-            {showHost ? "Or Want to join an existing group?" : "Or Are you the DJ for your group?"}
+            {showHost ? "Want to join an existing group?.." : "Are you the DJ for your group?.."}
           </span>
           <Btn
             variant="ghost"

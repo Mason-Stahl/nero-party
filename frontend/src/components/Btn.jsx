@@ -10,7 +10,7 @@ const variants = {
       border: "1px solid rgba(255,255,255,0.14)",
     },
     hover: {
-      background: "rgba(255,255,255,0.13)",
+      background: "rgba(255,255,255,0.16)",
       boxShadow: "0 0 14px rgba(255,255,255,0.06)",
     },
   },
