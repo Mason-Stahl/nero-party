@@ -6,6 +6,8 @@ A listening party app where friends join, add songs, listen together, and crown 
 
 ### Prerequisites
 
+TESTING
+
 - Node.js 18+
 - npm
 - YouTube Data API v3 key ([get one free from Google Cloud Console](https://console.cloud.google.com/) — search quota is generous, song lookups won't come close to the limit)
