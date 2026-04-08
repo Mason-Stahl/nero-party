@@ -93,17 +93,10 @@ How do i prevent someone from giving everyone else 1 star so they win? can i hav
 
 Also i would like to export the play history as a playlist, creating a youtube playlist may be possible, do i want that on my account tho? maybe just an excel or smthng that has the name and urls ?
 
+*redesign* still building for group of friends who want to listen together remotely, or for people who want to discover new songs/meet random people 
+
 ## TO DO
-
-1. Better Search Bar: Autocomplete Song from LastFM -> Youtube Link
-- (optional) Add Deezer API to get unknown or less-known songs
-- (optional) Album -> Song -> Youtube Link
-- (optional) Artist -> Song -> Youtube Link
-
-2. Check Nero Existing Product Design
 3. Design Changes
-- 
-
 
 ### Designs to keep: 
 - Groupchat Phone
@@ -111,12 +104,28 @@ Also i would like to export the play history as a playlist, creating a youtube p
 - Youtube video embed
 
 ### Design Modifications
-- circular controls for guests (request to pause / request to skip) (or use groupchat for this?)
-- should voting be seperate from history? (could encourage make it obvious, however you vote on historic songs)
-- notes modification to make much simpler (small stem, maybe no marquee but variable height?)
-- black background, white text, green accent, 
-- nav bar
+- circular controls for guests (request to pause / request to skip) (or use groupchat for this? yep)
+- should voting be seperate from history? (could encourage make it obvious, however you vote on historic songs? yep)
+- notes removal to album covers (maybe spinning disk which currently exists in mixing table above or below it)
+- black background, white text, green accent, slight slight glassiness 
 - Join flow (lobby screen + host button)
 - instead of random 6 letters for link, make it groupname + incrementing numbers if lobby already exists
+-
 
+### Layout
 
+**desktop**
+
+- 20% - group info *for host (settings - new page)*
+- 50% - horizontal scrollwheel queue 
+        (<)(>)(jump to present)
+[[previous][now playing][up next]]
+*for host - under now playing - (pause/play, skip, ban song)*
+- 30% - (vote) ('add to queue' searchbox) (groupchat)
+
+**mobile layout**
+
+top - group info
+middle - horizontal scrollwheel queue,
+    searchbox
+navbar - [vote, home, groupchat]

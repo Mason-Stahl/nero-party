@@ -51,31 +51,6 @@ Use the provided starter repo which includes:
 **Player** - (MAY CHANGE TO ALBUM ART or Thumbnail image) get video feed and display it on a 'tv' in the club. 
 **MixingTable** - Left spinner now playing, right spinner up next (ability to preview up next w/ button). Internal squares manage <br>-auto accept, max song length, Y/N song approval, ban song (prevent spam), group managemenet, - kick from group
 
-### Helper/Formatting/Intro Components (COMPLETE)
-**DialogBubble** - Format intro speech bubble - Visual shell — arrow, border-radius, text, subtext, children slot. Optional `onBack` prop: renders a `←` button top-left of bubble.
-**DialogSequence** - State manage ordering of speech bubbles. `host-form` and `join-list` steps pass `onBack={() => setStep("choice")}` to return to Host/Join choice.
-**GlowButton** - Cool looking button - copied from website
-**Writband** - Cool looking button - squmorphic for entry.
-**HostForm** - Dialog bubble element - Builds Joinable Lobby  
-**NeroIntro** - Animation intro sequence management. Renders <DialogSequence /> after pan completes
-**JoinForm** - Dialog bubble elemtn - Lobby search list
-
-## frontend/public/images
-- background.png
-- car1, car2, car3.png
-- stage.png
-
-### NeroIntro animation plays
-  → DialogSequence fades in
-    → choice: Host / Join
-    → host-form: name + group + privacy
-    → host-confirm: bouncer line shows for 2.5s
-      → onComplete(data) fires
-        → App: setFadeOut(true) — 2s fade to black
-        → App: after 2s, swap to StagePage
-        → App: overlay fades back in (0.4s)
-          → StagePage with stage.png
-
 ## dev.db
 Party — joinCode (shareable), host config (maxSongs, timeLimitMin, autoAccept, maxSongLengthSec), status lifecycle
 Participant — ephemeral, no auth, socketId for reconnect, isBanned for kick

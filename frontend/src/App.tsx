@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 // @ts-ignore
-import NeroIntro from "./components/Introduction/NeroIntro";
+import LobbyPage from "./pages/LobbyPage";
 // @ts-ignore
 import StagePage from "./pages/StagePage";
 // @ts-ignore
@@ -50,7 +50,7 @@ export default function App() {
 
   return (
     <>
-      {page === "intro" && <NeroIntro onComplete={handleIntroComplete} />}
+      {page === "intro" && <LobbyPage onComplete={handleIntroComplete} />}
       {page === "stage" && (
         <PartyProvider data={hostData}>
           <StagePage onLeave={handleLeave} />
