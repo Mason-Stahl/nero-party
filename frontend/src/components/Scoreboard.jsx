@@ -64,7 +64,7 @@ function ParticipantRow({ name, avg, rank, maxAvg, hasScores }) {
   );
 }
 
-export default function Scoreboard({ songs = [], participants = [], connected = false, onLeave }) {
+export default function Scoreboard({ songs = [], participants = [], connected = false, onLeave, inline = false }) {
   const { groupName, joinCode } = useParty();
 
   // Per-participant avg across all their played+rated songs
@@ -80,21 +80,31 @@ export default function Scoreboard({ songs = [], participants = [], connected = 
   const anyScored = rows.some((r) => r.avg > 0);
   const maxAvg    = anyScored ? rows[0].avg : 5;
 
+  const outerStyle = inline ? {
+    width:          "100%",
+    background:     "rgba(0,0,0,0.32)",
+    backdropFilter: "blur(10px)",
+    border:         "none",
+    borderBottom:   "1px solid rgba(255,255,255,0.08)",
+    borderRadius:   0,
+    padding:        "12px 14px 14px",
+  } : {
+    position:       "absolute",
+    top:            12,
+    left:           "50%",
+    transform:      "translateX(-50%)",
+    width:          "min(520px, 80vw)",
+    background:     "rgba(0,0,0,0.72)",
+    backdropFilter: "blur(10px)",
+    border:         "1px solid rgba(255,255,255,0.12)",
+    borderRadius:   10,
+    padding:        "10px 14px 12px",
+    zIndex:         10,
+    boxShadow:      "0 4px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)",
+  };
+
   return (
-    <div style={{
-      position:       "absolute",
-      top:            12,
-      left:           "50%",
-      transform:      "translateX(-50%)",
-      width:          "min(520px, 80vw)",
-      background:     "rgba(0,0,0,0.72)",
-      backdropFilter: "blur(10px)",
-      border:         "1px solid rgba(255,255,255,0.12)",
-      borderRadius:   10,
-      padding:        "10px 14px 12px",
-      zIndex:         10,
-      boxShadow:      "0 4px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.07)",
-    }}>
+    <div style={outerStyle}>
 
       {/* ── top bar: group ID + connection ── */}
       <div style={{
@@ -115,27 +125,29 @@ export default function Scoreboard({ songs = [], participants = [], connected = 
         }}>
           {connected ? "● live" : "○ connecting…"}
         </span>
-        <button
-          onClick={onLeave ?? (() => window.location.reload())}
-          style={{
-            marginLeft:    10,
-            padding:       "2px 8px",
-            background:    "rgba(255,255,255,0.07)",
-            border:        "1px solid rgba(255,255,255,0.15)",
-            borderRadius:  4,
-            cursor:        "pointer",
-            fontFamily:    "sans-serif",
-            fontSize:      9,
-            fontWeight:    700,
-            letterSpacing: "0.06em",
-            color:         "rgba(255,255,255,0.45)",
-            transition:    "background 0.15s, color 0.15s",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "#f87171"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
-        >
-          LEAVE
-        </button>
+        {!inline && (
+          <button
+            onClick={onLeave ?? (() => window.location.reload())}
+            style={{
+              marginLeft:    10,
+              padding:       "2px 8px",
+              background:    "rgba(255,255,255,0.07)",
+              border:        "1px solid rgba(255,255,255,0.15)",
+              borderRadius:  4,
+              cursor:        "pointer",
+              fontFamily:    "sans-serif",
+              fontSize:      9,
+              fontWeight:    700,
+              letterSpacing: "0.06em",
+              color:         "rgba(255,255,255,0.45)",
+              transition:    "background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "#f87171"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
+          >
+            LEAVE
+          </button>
+        )}
       </div>
 
       {/* ── scoreboard header ── */}

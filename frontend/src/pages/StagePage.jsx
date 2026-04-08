@@ -1,15 +1,42 @@
 import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useParty } from "../context/PartyContext";
-import Queue from "../components/Queue";
-import Player from "../components/Player";
-import MixingTable from "../components/MixingTable";
-import History from "../components/Peripherals/History";
-import GroupChat from "../components/Peripherals/GroupChat";
-import Scoreboard from "../components/Scoreboard";
+import { useIsMobile } from "../lib/useIsMobile";
+import TopBar       from "./TopBar";
+import MiddleZone   from "./MiddleZone";
+import BottomBar    from "./BottomBar";
+import MobileNavbar, { NAVBAR_H } from "./MobileNavbar";
+import AddSong      from "../components/AddSong";
+import Scoreboard   from "../components/Scoreboard";
+import History      from "../components/Peripherals/History";
+import GroupChat    from "../components/Peripherals/GroupChat";
+
+const BLOBS = (
+  <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
+    <div style={{
+      position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)",
+      width: 600, height: 600,
+      background: "radial-gradient(circle, rgba(74,222,128,0.08), transparent 70%)",
+      filter: "blur(40px)",
+    }} />
+    <div style={{
+      position: "absolute", bottom: "-10%", left: "-5%",
+      width: 500, height: 500,
+      background: "radial-gradient(circle, rgba(120,80,255,0.08), transparent 70%)",
+      filter: "blur(40px)",
+    }} />
+    <div style={{
+      position: "absolute", bottom: "-10%", right: "-5%",
+      width: 500, height: 500,
+      background: "radial-gradient(circle, rgba(34,211,238,0.07), transparent 70%)",
+      filter: "blur(40px)",
+    }} />
+  </div>
+);
 
 export default function StagePage({ onLeave }) {
   const { partyId, participantId, isHost } = useParty();
+  const isMobile = useIsMobile();
 
   const socketRef                       = useRef(null);
   const [participants, setParticipants] = useState([]);
@@ -20,12 +47,15 @@ export default function StagePage({ onLeave }) {
   const [messages,     setMessages]     = useState([]);
   const [partyEnded,   setPartyEnded]   = useState(false);
 
-  const currentSong = queue.find((s) => s.status === "playing") ?? null;
-  const [bgHue, setBgHue] = useState(() => Math.floor(Math.random() * 360));
+  // Mobile-only: which tab is active + unread tracking
+  const [activePage,  setActivePage]  = useState("home");
+  const [mobileSeen,  setMobileSeen]  = useState(0);
+  const mobileUnread = Math.max(0, messages.length - mobileSeen);
 
-  useEffect(() => {
-    setBgHue(Math.floor(Math.random() * 360));
-  }, [currentSong?.id]);
+  function handleMobilePageChange(page) {
+    if (page === "chat") setMobileSeen(messages.length);
+    setActivePage(page);
+  }
 
   function handleSendMessage(body) {
     socketRef.current?.emit("send-message", { partyId, participantId, body });
@@ -35,121 +65,148 @@ export default function StagePage({ onLeave }) {
     if (!partyId || !participantId) return;
 
     fetch(`http://localhost:3000/parties/${partyId}/songs`)
-      .then((r) => r.json())
-      .then(setQueue)
-      .catch(() => {});
+      .then((r) => r.json()).then(setQueue).catch(() => {});
     fetch(`http://localhost:3000/parties/${partyId}/songs/history`)
-      .then((r) => r.json())
-      .then(setHistory)
-      .catch(() => {});
+      .then((r) => r.json()).then(setHistory).catch(() => {});
     fetch(`http://localhost:3000/parties/${partyId}/messages`)
-      .then((r) => r.json())
-      .then(setMessages)
-      .catch(() => {});
+      .then((r) => r.json()).then(setMessages).catch(() => {});
 
     const socket = io("http://localhost:3000");
     socketRef.current = socket;
 
-    socket.on("connect", () => {
-      setConnected(true);
-      socket.emit("join-party", { partyId, participantId });
-    });
-
+    socket.on("connect",              () => { setConnected(true); socket.emit("join-party", { partyId, participantId }); });
     socket.on("participants-updated", setParticipants);
     socket.on("queue-updated",        setQueue);
     socket.on("playback-updated",     setPlayback);
     socket.on("history-updated",      setHistory);
-    socket.on("chat-message", (msg) => setMessages((prev) => [...prev, msg]));
-    socket.on("party-ended",  () => setPartyEnded(true));
-    socket.on("disconnect", () => setConnected(false));
+    socket.on("chat-message",         (msg) => setMessages((prev) => [...prev, msg]));
+    socket.on("party-ended",          () => setPartyEnded(true));
+    socket.on("disconnect",           () => setConnected(false));
 
     return () => socket.disconnect();
   }, [partyId, participantId]);
 
-  return (
-    <div style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
-      <img
-        src="/images/stage2.png"
-        alt=""
-        aria-hidden="true"
-        style={{
-          position: "absolute", inset: 0,
-          width: "100%", height: "100%",
-          objectFit: "cover",
-          objectPosition: "center",
-        }}
-      />
+  // ── Mobile layout ────────────────────────────────────────────────────────────
+  if (isMobile) {
+    return (
+      <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0a0a0a" }}>
+        {BLOBS}
 
-      {/* Color tint overlay */}
-      <div style={{
-        position:   "absolute", inset: 0,
-        backgroundColor: `hsl(${bgHue}, 40%, 35%)`,
-        opacity:         0.5,
-        transition:      "background-color 1.5s ease",
-        zIndex:     0,
-      }} />
+        {/* Content area — fills everything above the navbar */}
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: NAVBAR_H, zIndex: 1 }}>
 
-      {/* Content layer */}
-      <div style={{ position: "relative", zIndex: 1, height: "100%" }}>
-
-        {/* ── Host: MixingTable ── */}
-        {isHost ? (
-          <div style={{
-            position:  "absolute",
-            top: "50%", left: "50%",
-            transform: "translate(-50%, -56%)",
-            width:     "min(86vw, 760px)",
-            zIndex:    2,
-          }}>
-            <MixingTable
-              songs={queue}
-              history={history}
-              participants={participants}
-              isPaused={playback.isPaused}
-              effectiveStartTime={playback.effectiveStartTime}
-            />
-          </div>
-        ) : (
-          /* ── Guest: Player + participant sidebar ── */
-          <>
+          {/* HOME: inline scoreboard + queue/table + search bar */}
+          {activePage === "home" && (
             <div style={{
-              position:  "absolute",
-              top: "50%", left: "50%",
-              transform: "translate(-50%, -62%)",
-              width:     "min(48vw, 480px)",
-              zIndex:    2,
+              position:      "absolute",
+              inset:         0,
+              display:       "flex",
+              flexDirection: "column",
+              overflow:      "hidden",
             }}>
-              <Player
-                song={currentSong}
-                isPaused={playback.isPaused}
-                effectiveStartTime={playback.effectiveStartTime}
-              />
+              {/* Scoreboard — compact inline at top */}
+              <div style={{ flexShrink: 0, zIndex: 2 }}>
+                <Scoreboard
+                  songs={history}
+                  participants={participants}
+                  connected={connected}
+                  inline
+                />
+              </div>
+
+              {/* Queue / MixingTable — fills remaining space */}
+              <div style={{ flex: 1, position: "relative", overflow: "visible", zIndex: 1 }}>
+                <MiddleZone
+                  isHost={isHost}
+                  songs={queue}
+                  history={history}
+                  participants={participants}
+                  isPaused={playback.isPaused}
+                  effectiveStartTime={playback.effectiveStartTime}
+                />
+              </div>
+
+              {/* AddSong — pinned at bottom of home page */}
+              <div style={{
+                flexShrink:     0,
+                padding:        "10px 16px",
+                background:     "rgba(0,0,0,0.75)",
+                backdropFilter: "blur(14px)",
+                borderTop:      "1px solid rgba(255,255,255,0.08)",
+                zIndex:         2,
+              }}>
+                <AddSong partyEnded={partyEnded} />
+              </div>
             </div>
+          )}
 
-          </>
-        )}
+          {/* VOTE: full-page history + scoreboard */}
+          {activePage === "vote" && (
+            <History
+              fullPage
+              songs={history}
+              participants={participants}
+              connected={connected}
+            />
+          )}
 
-        {/* ── Scoreboard (top-center TV) ── */}
-        <Scoreboard songs={history} participants={participants} connected={connected} onLeave={onLeave} />
-
-        {/* ── History (portal, self-positions) ── */}
-        <History songs={history} />
-
-        {/* ── GroupChat (portal, right side) ── */}
-        <GroupChat messages={messages} onSendMessage={handleSendMessage} />
-
-        {/* ── Queue (bottom strip) ── */}
-        <div style={{
-          position:       "absolute",
-          bottom:         0, left: 0, right: 0,
-          background:     "rgba(0,0,0,0.65)",
-          backdropFilter: "blur(8px)",
-          borderTop:      "1px solid rgba(255,255,255,0.08)",
-          padding:        "14px 20px",
-        }}>
-          <Queue songs={queue} partyEnded={partyEnded} />
+          {/* CHAT: full-page group chat */}
+          {activePage === "chat" && (
+            <GroupChat
+              fullPage
+              messages={messages}
+              onSendMessage={handleSendMessage}
+            />
+          )}
         </div>
 
+        {/* Fixed bottom navbar */}
+        <MobileNavbar
+          activePage={activePage}
+          onChange={handleMobilePageChange}
+          unreadCount={mobileUnread}
+        />
+      </div>
+    );
+  }
+
+  // ── Desktop layout ───────────────────────────────────────────────────────────
+  return (
+    <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0a0a0a" }}>
+      {BLOBS}
+
+      {/* TOP (0–20%) */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "20%", zIndex: 5 }}>
+        <TopBar
+          songs={history}
+          participants={participants}
+          connected={connected}
+          onLeave={onLeave}
+        />
+      </div>
+
+      {/* MIDDLE (20–70%) */}
+      <div style={{ position: "absolute", top: "20%", left: 0, right: 0, height: "50%", overflow: "visible", zIndex: 2 }}>
+        <MiddleZone
+          isHost={isHost}
+          songs={queue}
+          history={history}
+          participants={participants}
+          isPaused={playback.isPaused}
+          effectiveStartTime={playback.effectiveStartTime}
+        />
+      </div>
+
+      {/* BOTTOM (70–100%) */}
+      <div style={{ position: "absolute", top: "70%", left: 0, right: 0, bottom: 0, zIndex: 5 }}>
+        <BottomBar
+          messages={messages}
+          onSendMessage={handleSendMessage}
+          partyEnded={partyEnded}
+          songs={history}
+          participants={participants}
+          connected={connected}
+        />
       </div>
     </div>
   );

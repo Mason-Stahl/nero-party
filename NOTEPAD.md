@@ -116,12 +116,12 @@ Also i would like to export the play history as a playlist, creating a youtube p
 
 **desktop**
 
-- 20% - group info *for host (settings - new page)*
-- 50% - horizontal scrollwheel queue 
+- top 20% - group info *for host (settings) -> new page*
+- middle 50% - horizontal scrollwheel queue 
         (<)(>)(jump to present)
 [[previous][now playing][up next]]
 *for host - under now playing - (pause/play, skip, ban song)*
-- 30% - (vote) ('add to queue' searchbox) (groupchat)
+- bottom 30% - (vote) ('add to queue' searchbox) (groupchat)
 
 **mobile layout**
 

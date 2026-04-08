@@ -1,23 +1,9 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useParty } from "../../context/PartyContext";
-import SlideDrawer from "./SlideDrawer";
+import Scoreboard from "../Scoreboard";
 import StarRating from "./StarRating";
 import Playlist from "./Playlist";
-
-// ── constants ─────────────────────────────────────────────────────────────────
-
-const CREAM    = "#fdf8e1";
-const LINE_CLR = "#b8cfe8";
-const RED_LINE = "#c85050";
-const LINE_H   = 28;
-const MARGIN_W = 30;
-
-const RULED_BG = `repeating-linear-gradient(
-  transparent,
-  transparent ${LINE_H - 1}px,
-  ${LINE_CLR} ${LINE_H - 1}px,
-  ${LINE_CLR} ${LINE_H}px
-)`;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -40,11 +26,12 @@ function SongRow({ song, number, participantId, partyId, expanded, onToggle }) {
   const [pendingStars, setPendingStars] = useState(0);
   const [submitted,    setSubmitted]    = useState(false);
   const [error,        setError]        = useState(null);
+  const [hovered,      setHovered]      = useState(false);
 
-  const isOwn     = song.addedByParticipantId === participantId;
-  const myRating  = song.ratings?.find((r) => r.participantId === participantId);
-  const avg       = avgDisplay(song.ratings);
-  const isRated   = submitted || !!myRating;
+  const isOwn    = song.addedByParticipantId === participantId;
+  const myRating = song.ratings?.find((r) => r.participantId === participantId);
+  const avg      = avgDisplay(song.ratings);
+  const isRated  = submitted || !!myRating;
   const dispStars = pendingStars || (myRating ? myRating.stars / 2 : 0);
 
   const handleRate = async (e) => {
@@ -72,77 +59,83 @@ function SongRow({ song, number, participantId, partyId, expanded, onToggle }) {
   };
 
   return (
-    <div>
+    <div style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
       {/* song row */}
       <div
         onClick={onToggle}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         style={{
           display:    "flex",
           alignItems: "center",
-          height:     LINE_H,
+          gap:        10,
+          padding:    "9px 14px",
           cursor:     "pointer",
+          background: hovered ? "rgba(255,255,255,0.04)" : "transparent",
+          transition: "background 0.12s",
         }}
       >
-        <div style={{
-          width:        MARGIN_W,
-          flexShrink:   0,
-          textAlign:    "right",
-          paddingRight: 8,
-          fontSize:     10,
-          fontFamily:   "sans-serif",
-          color:        "rgba(0,0,0,0.3)",
+        <span style={{
+          width:      22,
+          flexShrink: 0,
+          textAlign:  "right",
+          fontSize:   10,
+          fontFamily: "monospace",
+          color:      "rgba(255,255,255,0.25)",
         }}>
           {number}
-        </div>
-        <div style={{ width: 10, flexShrink: 0 }} />
+        </span>
         <span style={{
           flex:         1,
           overflow:     "hidden",
           textOverflow: "ellipsis",
           whiteSpace:   "nowrap",
-          fontFamily:   "'Caveat', 'Comic Sans MS', cursive",
-          fontSize:     16,
-          color:        "#1a1a1a",
+          fontFamily:   "sans-serif",
+          fontSize:     13,
+          color:        "rgba(255,255,255,0.85)",
         }}>
           {song.title}
         </span>
         {avg !== null && (
           <span style={{
             fontSize:    10,
-            fontFamily:  "sans-serif",
-            color:       "#888",
+            fontFamily:  "monospace",
+            color:       "rgba(255,220,100,0.7)",
             flexShrink:  0,
-            marginRight: 8,
           }}>
             ★{avg}
           </span>
         )}
+        <span style={{
+          fontSize:   10,
+          color:      "rgba(255,255,255,0.2)",
+          flexShrink: 0,
+        }}>
+          {expanded ? "▲" : "▼"}
+        </span>
       </div>
 
-      {/* RatingBox */}
+      {/* rating box */}
       {expanded && (
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
-            marginLeft:   MARGIN_W + 10,
-            marginTop:    4,
-            marginBottom: 6,
-            marginRight:  8,
-            background:   "rgba(255,255,255,0.88)",
-            border:       "1px solid rgba(0,0,0,0.1)",
-            borderRadius: 5,
-            padding:      "7px 10px",
+            margin:       "0 14px 10px 46px",
+            background:   "rgba(255,255,255,0.05)",
+            border:       "1px solid rgba(255,255,255,0.09)",
+            borderRadius: 8,
+            padding:      "8px 12px",
             fontFamily:   "sans-serif",
           }}
         >
-          <div style={{ fontSize: 11, color: "#777", marginBottom: 6 }}>
-            <span style={{ fontWeight: 600 }}>{song.artist}</span>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginBottom: 6 }}>
+            <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.6)" }}>{song.artist}</span>
             {song.durationSec ? ` · ${formatDuration(song.durationSec)}` : ""}
             {isOwn && (
               <span style={{
                 marginLeft:    7,
-                background:    "#fde8e8",
-                color:         "#c0392b",
+                background:    "rgba(248,113,113,0.15)",
+                color:         "#f87171",
                 borderRadius:  3,
                 padding:       "1px 5px",
                 fontSize:      10,
@@ -155,33 +148,33 @@ function SongRow({ song, number, participantId, partyId, expanded, onToggle }) {
           </div>
 
           {isOwn ? (
-            <div style={{ fontSize: 11, color: "#bbb", fontStyle: "italic" }}>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontStyle: "italic" }}>
               Can't rate your own song
             </div>
           ) : isRated ? (
             <div>
               <StarRating rating={myRating ? myRating.stars / 2 : dispStars} readOnly />
-              <div style={{ fontSize: 10, color: "#888", marginTop: 3 }}>Rated ✓</div>
+              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>Rated ✓</div>
             </div>
           ) : (
             <div>
               <StarRating rating={dispStars} onRatingChange={setPendingStars} />
               {error && (
-                <div style={{ fontSize: 10, color: "#c0392b", marginTop: 2 }}>{error}</div>
+                <div style={{ fontSize: 10, color: "#f87171", marginTop: 2 }}>{error}</div>
               )}
               <button
                 onClick={handleRate}
                 disabled={!pendingStars}
                 style={{
-                  marginTop:    5,
-                  padding:      "3px 12px",
-                  background:   pendingStars ? "#1db954" : "#ddd",
+                  marginTop:    6,
+                  padding:      "4px 14px",
+                  background:   pendingStars ? "rgba(34,197,94,0.85)" : "rgba(255,255,255,0.08)",
                   border:       "none",
-                  borderRadius: 4,
+                  borderRadius: 5,
                   cursor:       pendingStars ? "pointer" : "default",
                   fontSize:     11,
                   fontWeight:   700,
-                  color:        pendingStars ? "#fff" : "#999",
+                  color:        pendingStars ? "#000" : "rgba(255,255,255,0.25)",
                   transition:   "background 0.15s",
                 }}
               >
@@ -195,47 +188,49 @@ function SongRow({ song, number, participantId, partyId, expanded, onToggle }) {
   );
 }
 
-// ── History ───────────────────────────────────────────────────────────────────
+// ── Shared panel content ──────────────────────────────────────────────────────
+// Used by both the desktop slide-out and the mobile full-page view.
 
-export default function History({ songs = [] }) {
-  const { partyId, participantId, isHost } = useParty();
+function HistoryContent({ songs, participants, connected }) {
+  const { partyId, participantId } = useParty();
   const [expandedId, setExpandedId] = useState(null);
-
   const count = songs.length;
 
   return (
-    <SlideDrawer
-      side="left"
-      tabTop={isHost ? "10%" : "50%"}
-      tabYOffset={isHost ? "0" : "-50%"}
-      tabLabel="HISTORY + VOTE"
-      tabSubtext={`${count} ${count === 1 ? "song" : "songs"} played`}
-    >
-      {/* panel header */}
+    <>
+      {/* Scoreboard at top */}
+      <Scoreboard songs={songs} participants={participants} connected={connected} inline />
+
+      {/* History header */}
       <div style={{
-        padding:      "12px 14px 10px",
-        borderBottom: `1px solid ${LINE_CLR}`,
         flexShrink:   0,
-        background:   CREAM,
+        padding:      "10px 14px 9px",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background:   "rgba(255,255,255,0.03)",
         display:      "flex",
         alignItems:   "center",
         gap:          8,
       }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+          stroke="rgba(255,255,255,0.45)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
         <div style={{ flex: 1 }}>
           <div style={{
             fontFamily:    "sans-serif",
-            fontSize:      12,
+            fontSize:      11,
             fontWeight:    700,
             letterSpacing: "0.1em",
-            color:         "#333",
+            color:         "rgba(255,255,255,0.6)",
           }}>
-            HISTORY
+            HISTORY + VOTE
           </div>
           <div style={{
             fontFamily: "sans-serif",
             fontSize:   10,
-            color:      "rgba(0,0,0,0.4)",
-            marginTop:  2,
+            color:      "rgba(255,255,255,0.25)",
+            marginTop:  1,
           }}>
             {count} {count === 1 ? "song" : "songs"} played — click to rate
           </div>
@@ -243,33 +238,15 @@ export default function History({ songs = [] }) {
         <Playlist songs={songs} />
       </div>
 
-      {/* song list */}
-      <div style={{
-        flex:            1,
-        overflowY:       "auto",
-        position:        "relative",
-        background:      CREAM,
-        backgroundImage: RULED_BG,
-      }}>
-        {/* red margin line */}
-        <div style={{
-          position:      "absolute",
-          left:          MARGIN_W,
-          top:           0,
-          bottom:        0,
-          width:         1,
-          background:    RED_LINE,
-          opacity:       0.55,
-          pointerEvents: "none",
-          zIndex:        1,
-        }} />
-
+      {/* Song list */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
         {count === 0 ? (
           <div style={{
-            padding:    "2px 40px",
-            fontFamily: "'Caveat', 'Comic Sans MS', cursive",
-            fontSize:   15,
-            color:      "rgba(0,0,0,0.3)",
+            padding:    "24px 14px",
+            fontFamily: "sans-serif",
+            fontSize:   13,
+            color:      "rgba(255,255,255,0.2)",
+            textAlign:  "center",
           }}>
             Nothing played yet…
           </div>
@@ -289,6 +266,56 @@ export default function History({ songs = [] }) {
           ))
         )}
       </div>
-    </SlideDrawer>
+    </>
+  );
+}
+
+// ── History — desktop: slide-out portal  /  mobile: full-page inline ──────────
+// Props: open, onClose, songs, participants, connected, fullPage
+
+export default function History({ open, onClose, songs = [], participants = [], connected = false, fullPage = false }) {
+  // Mobile full-page: fills its container directly
+  if (fullPage) {
+    return (
+      <div style={{
+        position:      "absolute",
+        inset:         0,
+        display:       "flex",
+        flexDirection: "column",
+        background:    "#16161e",
+        overflowY:     "hidden",
+      }}>
+        <HistoryContent songs={songs} participants={participants} connected={connected} />
+      </div>
+    );
+  }
+
+  // Desktop: portal slide-out from left
+  return createPortal(
+    <>
+      {open && (
+        <div
+          onClick={onClose}
+          style={{ position: "fixed", inset: 0, zIndex: 19, cursor: "default" }}
+        />
+      )}
+      <div style={{
+        position:      "fixed",
+        top:           0,
+        left:          0,
+        width:         "min(360px, 88vw)",
+        height:        "100vh",
+        zIndex:        20,
+        transform:     open ? "translateX(0)" : "translateX(-100%)",
+        transition:    "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        display:       "flex",
+        flexDirection: "column",
+        background:    "#16161e",
+        boxShadow:     "4px 0 28px rgba(0,0,0,0.7)",
+      }}>
+        <HistoryContent songs={songs} participants={participants} connected={connected} />
+      </div>
+    </>,
+    document.body
   );
 }
