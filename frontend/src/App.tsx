@@ -4,6 +4,8 @@ import LobbyPage from "./pages/LobbyPage";
 // @ts-ignore
 import StagePage from "./pages/StagePage";
 // @ts-ignore
+import HostSettings from "./pages/HostSettings";
+// @ts-ignore
 import { PartyProvider } from "./context/PartyContext";
 
 const SESSION_KEY = "nero_session";
@@ -14,11 +16,11 @@ function loadSession() {
   catch { return null; }
 }
 
-type AppPage = "intro" | "stage";
+type AppPage = "intro" | "host-settings" | "stage";
 
 export default function App() {
   const saved                   = loadSession();
-  const [page,     setPage]     = useState<AppPage>(saved ? "stage" : "intro");
+  const [page,     setPage]     = useState<AppPage>(saved ? (saved.isHost ? "host-settings" : "stage") : "intro");
   const [fadeOut,  setFadeOut]  = useState(false);
   const [hostData, setHostData] = useState<any>(saved);
 
@@ -37,9 +39,9 @@ export default function App() {
   const handleIntroComplete = (data: any) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(data));
     setHostData(data);
-    setFadeOut(true);                                   // fade to black over 2s
-    setTimeout(() => setPage("stage"), 2000);           // swap page at peak black
-    setTimeout(() => setFadeOut(false), 2200);          // fade back in
+    setFadeOut(true);
+    setTimeout(() => setPage(data.isHost ? "host-settings" : "stage"), 2000);
+    setTimeout(() => setFadeOut(false), 2200);
   };
 
   const handleLeave = () => {
@@ -48,9 +50,16 @@ export default function App() {
     setPage("intro");
   };
 
+  const handleGoToStage = () => setPage("stage");
+
   return (
     <>
       {page === "intro" && <LobbyPage onComplete={handleIntroComplete} />}
+      {page === "host-settings" && (
+        <PartyProvider data={hostData}>
+          <HostSettings onGoToStage={handleGoToStage} />
+        </PartyProvider>
+      )}
       {page === "stage" && (
         <PartyProvider data={hostData}>
           <StagePage onLeave={handleLeave} />

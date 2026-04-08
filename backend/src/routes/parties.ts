@@ -5,14 +5,10 @@ import { broadcastParticipants, broadcastPartyEnded } from "../broadcast.js";
 const router = Router();
 const prisma = new PrismaClient();
 
-// Generate a short human-readable join code like "NERO42"
-function generateJoinCode(): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I confusion
-  const prefix = "NERO";
-  const suffix = Array.from({ length: 2 }, () =>
-    chars[Math.floor(Math.random() * chars.length)]
-  ).join("");
-  return prefix + suffix;
+// Derive a join code from the group name, appending a number for uniqueness.
+// "Bass Heads" → "BASSHEADS", then "BASSHEADS2", "BASSHEADS3", etc.
+function slugifyGroupName(groupName: string): string {
+  return groupName.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12) || "PARTY";
 }
 
 // POST /parties — host creates a new party
@@ -33,12 +29,13 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "hostName and groupName are required" });
   }
 
-  // Retry on the rare joinCode collision
-  let joinCode = generateJoinCode();
-  for (let i = 0; i < 5; i++) {
-    const exists = await prisma.party.findUnique({ where: { joinCode } });
-    if (!exists) break;
-    joinCode = generateJoinCode();
+  // Try the base slug, then append incrementing numbers until unique
+  const base = slugifyGroupName(groupName.trim());
+  let joinCode = base;
+  let counter = 2;
+  while (await prisma.party.findUnique({ where: { joinCode } })) {
+    joinCode = `${base}${counter}`;
+    counter++;
   }
 
   const party = await prisma.party.create({
