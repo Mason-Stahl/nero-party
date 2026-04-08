@@ -13,6 +13,7 @@ import {
 } from "./broadcast.js";
 import partiesRouter from "./routes/parties.js";
 import songsRouter from "./routes/songs.js";
+import searchRouter from "./routes/search.js";
 
 const app    = express();
 const server = createServer(app);
@@ -36,6 +37,7 @@ app.get("/health", (_req, res) => {
 
 app.use("/parties", partiesRouter);
 app.use("/parties/:partyId/songs", songsRouter);
+app.use("/search", searchRouter);
 
 // ── Socket.IO ─────────────────────────────────────────────────────────────────
 

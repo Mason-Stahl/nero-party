@@ -95,26 +95,28 @@ Also i would like to export the play history as a playlist, creating a youtube p
 
 ## TO DO
 
-1. Player — YouTube IFrame embed, displays current song (status=playing). Nothing else can progress without a playing song.
+1. Better Search Bar: Autocomplete Song from LastFM -> Youtube Link
+- (optional) Add Deezer API to get unknown or less-known songs
+- (optional) Album -> Song -> Youtube Link
+- (optional) Artist -> Song -> Youtube Link
 
-2. Queue advancement — backend socket event + route to move queued → playing → played. Host triggers it from MixingTable. This is what connects Player to the queue.
+2. Check Nero Existing Product Design
+3. Design Changes
+- 
 
-3. MixingTable — wraps Player. Left spinner = now playing, right spinner = up next. Internal controls: auto-accept toggle, Y/N song approval, ban song, kick participant. This is the host's control center.
 
-4. History + Rating + Stars — once songs reach played status, they appear in History. Rating + Stars live inside it. This also unlocks the anti-abuse logic (can't rate your own song).
+### Designs to keep: 
+- Groupchat Phone
+- Scoreboard
+- Youtube video embed
 
-5. Scoreboard — depends on Rating data existing. Aggregates avg rating per song, shows winner. Can't build meaningfully before step 4.
+### Design Modifications
+- circular controls for guests (request to pause / request to skip) (or use groupchat for this?)
+- should voting be seperate from history? (could encourage make it obvious, however you vote on historic songs)
+- notes modification to make much simpler (small stem, maybe no marquee but variable height?)
+- black background, white text, green accent, 
+- nav bar
+- Join flow (lobby screen + host button)
+- instead of random 6 letters for link, make it groupname + incrementing numbers if lobby already exists
 
-6. GroupChat — fully independent of playback, could be built anytime, but lower priority than the core loop.
 
-7. Hamburger — Export playlist + Leave group. Last, purely utility.
-
-8. Restart (remember lobby localStorage)
-
-9. Animation Cleaning Up - (Skip Button , new images)
-
-10. Responsive Layout Test
-
-11. Deployable for others
-
-12. Record Video - link: https://youtu.be/Z4BMvrYNXV0

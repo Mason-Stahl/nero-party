@@ -112,8 +112,38 @@ ChatMessage — displayName denormalized so chat reads don't need a join
 - Horizontally scrollable if songs overflow
 
 ## AddSong (frontend/src/components/AddSong.jsx)
-- YouTube URL input → POST /parties/:partyId/songs
-- Enter key submits; green button when valid; error display inline
+- Two modes toggled by a small link at the bottom-right:
+  - **Search mode** (default): renders `<SongSearch>` typeahead; on selection stores `{ name, artist }`; submits `{ title, artist, participantId }` → backend resolves to YouTube
+  - **URL mode**: original YouTube URL paste input; submits `{ youtubeUrl, participantId }`
+- Green "+ Add" button activates only when a track is selected (search) or URL is non-empty (url)
+- Error displayed inline below
+
+## SongSearch (frontend/src/components/SongSearch.jsx)
+- Typeahead backed by LastFM via backend proxy (`GET /search/tracks?q=...`)
+- 300ms debounce + 2-char minimum before any network request fires
+- Dropdown renders **above** the input (queue sits near bottom of viewport)
+- Each row: album art thumbnail (28px) + track name + artist
+- Clicking a result fills the input as "Name — Artist" and calls `onSelect(track)`
+- X button clears selection and resets search
+- No YouTube calls happen during search — only on submission
+
+## SongCache (backend DB + songs.ts)
+- Global cross-party cache: `SongCache` model keyed by `canonicalId` = SHA-256(`artist.lower()|title.lower()`).slice(0,24)
+- Stores: `videoId`, `youtubeUrl`, `title`, `artist`, `thumbnailUrl`, `durationSec`
+- `resolveTrack(artist, title)` in songs.ts:
+  - Cache hit → returns stored data, **0 YouTube API calls**
+  - Cache miss → `search.list` (find videoId) + `videos.list` (metadata) → stores in `SongCache` permanently
+- Same song added by any user across any party reuses the cache entry
+
+## Search backend route (backend/src/routes/search.ts)
+- `GET /search/tracks?q=...` — proxies LastFM `track.search`, returns `[{ name, artist, mbid, image }]`
+- API key kept server-side; limit=8 results
+- Mounted at `/search` in index.ts
+
+## Songs backend POST (updated)
+- Accepts `{ youtubeUrl, participantId }` (URL mode) **or** `{ title, artist, participantId }` (search mode)
+- Search mode path: calls `resolveTrack` → checks `SongCache` → YouTube API only on cache miss
+- URL mode path: extracts videoId, calls `fetchYouTubeMeta` directly (no cache; already a known video)
 
 ## PartyContext (frontend/src/context/PartyContext.jsx)
 - `<PartyProvider data={hostData}>` wraps StagePage in App.tsx once onComplete fires

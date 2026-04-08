@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { PrismaClient } from "@prisma/client";
 import { env } from "../env.js";
+import crypto from "crypto";
 import {
   broadcastQueue,
   broadcastPlayback,
@@ -57,6 +58,77 @@ async function fetchYouTubeMeta(videoId: string): Promise<YTMeta | null> {
   };
 }
 
+// ── Song cache helpers ────────────────────────────────────────────────────────
+
+function makeCanonicalId(artist: string, title: string): string {
+  return crypto
+    .createHash("sha256")
+    .update(`${artist.toLowerCase().trim()}|${title.toLowerCase().trim()}`)
+    .digest("hex")
+    .slice(0, 24);
+}
+
+async function searchYouTubeVideoId(query: string): Promise<string | null> {
+  if (!env.YOUTUBE_API_KEY) return null;
+  const url =
+    `https://www.googleapis.com/youtube/v3/search?part=snippet` +
+    `&q=${encodeURIComponent(query)}&type=video` +
+    `&key=${env.YOUTUBE_API_KEY}&maxResults=1`;
+  const res  = await fetch(url);
+  const data = await res.json() as any;
+  return data.items?.[0]?.id?.videoId ?? null;
+}
+
+interface ResolvedTrack extends YTMeta {
+  videoId:    string;
+  youtubeUrl: string;
+}
+
+async function resolveTrack(artist: string, title: string): Promise<ResolvedTrack | null> {
+  const cid = makeCanonicalId(artist, title);
+
+  // Cache hit
+  const cached = await prisma.songCache.findUnique({ where: { canonicalId: cid } });
+  if (cached) {
+    return {
+      videoId:      cached.videoId,
+      youtubeUrl:   cached.youtubeUrl,
+      title:        cached.title,
+      artist:       cached.artist,
+      thumbnailUrl: cached.thumbnailUrl,
+      durationSec:  cached.durationSec,
+    };
+  }
+
+  // Cache miss — search YouTube
+  const videoId = await searchYouTubeVideoId(`${title} ${artist}`);
+  if (!videoId) return null;
+
+  const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  const meta       = await fetchYouTubeMeta(videoId);
+
+  await prisma.songCache.create({
+    data: {
+      canonicalId:  cid,
+      videoId,
+      youtubeUrl,
+      title:        meta?.title        ?? title,
+      artist:       meta?.artist       ?? artist,
+      thumbnailUrl: meta?.thumbnailUrl ?? null,
+      durationSec:  meta?.durationSec  ?? null,
+    },
+  });
+
+  return {
+    videoId,
+    youtubeUrl,
+    title:        meta?.title        ?? title,
+    artist:       meta?.artist       ?? artist,
+    thumbnailUrl: meta?.thumbnailUrl ?? null,
+    durationSec:  meta?.durationSec  ?? null,
+  };
+}
+
 // ── Routes ────────────────────────────────────────────────────────────────────
 
 // GET /parties/:partyId/songs — return queued + pending songs ordered by position
@@ -70,21 +142,23 @@ router.get("/", async (req: Request<P>, res) => {
   return res.json(songs);
 });
 
-// POST /parties/:partyId/songs — add a song
+// POST /parties/:partyId/songs — add a song via YouTube URL or artist+title search
 router.post("/", async (req: Request<P>, res) => {
-  const { partyId }                    = req.params;
-  const { youtubeUrl, participantId }  = req.body;
+  const { partyId }                                = req.params;
+  const { youtubeUrl, participantId, artist, title } = req.body;
 
-  if (!youtubeUrl?.trim() || !participantId) {
-    return res.status(400).json({ error: "youtubeUrl and participantId are required" });
+  if (!participantId) {
+    return res.status(400).json({ error: "participantId is required" });
+  }
+  const hasUrl    = !!youtubeUrl?.trim();
+  const hasSearch = !!(artist?.trim() && title?.trim());
+  if (!hasUrl && !hasSearch) {
+    return res.status(400).json({ error: "youtubeUrl or artist+title are required" });
   }
 
-  const videoId = extractVideoId(youtubeUrl.trim());
-  if (!videoId) return res.status(400).json({ error: "Invalid YouTube URL" });
-
   const party = await prisma.party.findUnique({ where: { id: partyId } });
-  if (!party)                      return res.status(404).json({ error: "Party not found" });
-  if (party.status === "ended")    return res.status(410).json({ error: "Party has ended" });
+  if (!party)                   return res.status(404).json({ error: "Party not found" });
+  if (party.status === "ended") return res.status(410).json({ error: "Party has ended" });
 
   const participant = await prisma.participant.findFirst({
     where: { id: participantId, partyId },
@@ -93,13 +167,32 @@ router.post("/", async (req: Request<P>, res) => {
 
   // Enforce maxSongs limit
   if (party.maxSongs) {
-    const count = await prisma.song.count({ where: { partyId, status: { in: ["queued", "pending", "playing"] } } });
+    const count = await prisma.song.count({
+      where: { partyId, status: { in: ["queued", "pending", "playing"] } },
+    });
     if (count >= party.maxSongs) return res.status(409).json({ error: "Queue is full" });
   }
 
-  // Fetch YouTube metadata (falls back gracefully if no API key)
-  const canonical = `https://www.youtube.com/watch?v=${videoId}`;
-  const meta      = await fetchYouTubeMeta(videoId);
+  // Resolve to canonical YouTube URL + metadata
+  let canonicalUrl: string;
+  let meta: YTMeta | null;
+
+  if (hasUrl) {
+    const videoId = extractVideoId(youtubeUrl.trim());
+    if (!videoId) return res.status(400).json({ error: "Invalid YouTube URL" });
+    canonicalUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    meta         = await fetchYouTubeMeta(videoId);
+  } else {
+    const resolved = await resolveTrack(artist.trim(), title.trim());
+    if (!resolved) return res.status(502).json({ error: "Could not find this track on YouTube" });
+    canonicalUrl = resolved.youtubeUrl;
+    meta         = {
+      title:        resolved.title,
+      artist:       resolved.artist,
+      thumbnailUrl: resolved.thumbnailUrl,
+      durationSec:  resolved.durationSec,
+    };
+  }
 
   // Determine next position
   const last = await prisma.song.findFirst({
@@ -108,16 +201,15 @@ router.post("/", async (req: Request<P>, res) => {
     select:  { position: true },
   });
   const position = (last?.position ?? 0) + 1;
-
-  const status = party.autoAccept ? "queued" : "pending";
+  const status   = party.autoAccept ? "queued" : "pending";
 
   const song = await prisma.song.create({
     data: {
       partyId,
       addedByParticipantId: participantId,
-      youtubeUrl:   canonical,
-      title:        meta?.title        ?? `YouTube: ${videoId}`,
-      artist:       meta?.artist       ?? "Unknown",
+      youtubeUrl:   canonicalUrl,
+      title:        meta?.title        ?? (hasSearch ? title : `YouTube: ${canonicalUrl}`),
+      artist:       meta?.artist       ?? (hasSearch ? artist : "Unknown"),
       thumbnailUrl: meta?.thumbnailUrl ?? null,
       durationSec:  meta?.durationSec  ?? null,
       status,

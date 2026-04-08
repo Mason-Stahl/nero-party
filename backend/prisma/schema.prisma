@@ -98,3 +98,14 @@ model ChatMessage {
   party       Party       @relation(fields: [partyId], references: [id])
   participant Participant @relation(fields: [participantId], references: [id])
 }
+
+model SongCache {
+  canonicalId  String   @id    // sha256(lowercase(artist)|lowercase(title)) first 24 chars
+  videoId      String
+  youtubeUrl   String
+  title        String
+  artist       String
+  thumbnailUrl String?
+  durationSec  Int?
+  cachedAt     DateTime @default(now())
+}
