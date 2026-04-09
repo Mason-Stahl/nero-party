@@ -218,15 +218,26 @@ router.post("/", async (req: Request<P>, res) => {
     include: { addedBy: { select: { displayName: true } } },
   });
 
+  // Auto-start: if autoAccept is on and nothing is currently playing, promote immediately
+  if (status === "queued") {
+    const alreadyPlaying = await prisma.song.findFirst({ where: { partyId, status: "playing" } });
+    if (!alreadyPlaying) {
+      const now = new Date();
+      await prisma.song.update({ where: { id: song.id }, data: { status: "playing", startedAt: now } });
+      initPlayback(partyId, now);
+      broadcastPlayback(partyId);
+    }
+  }
+
   await broadcastQueue(partyId);
   return res.status(201).json(song);
 });
 
 // POST /parties/:partyId/songs/advance — advance queue (host only)
-// Marks current playing song as played, promotes next queued song to playing.
+// Optional body.targetSongId: skip directly to a specific queued song (all before it are marked played).
 router.post("/advance", async (req: Request<P>, res) => {
-  const { partyId }       = req.params;
-  const { participantId } = req.body;
+  const { partyId }                    = req.params;
+  const { participantId, targetSongId } = req.body;
 
   const party = await prisma.party.findUnique({ where: { id: partyId } });
   if (!party) return res.status(404).json({ error: "Party not found" });
@@ -236,14 +247,33 @@ router.post("/advance", async (req: Request<P>, res) => {
     return res.status(403).json({ error: "Only the host can advance the queue" });
   }
 
-  // Mark current playing song as played
+  if (targetSongId) {
+    // Skip-to: jump directly to a specific future song
+    const target = await prisma.song.findFirst({ where: { id: targetSongId, partyId, status: "queued" } });
+    if (!target) return res.status(409).json({ error: "Target song not queued" });
+
+    await prisma.song.updateMany({ where: { partyId, status: "playing" }, data: { status: "played" } });
+    // Mark all queued songs created before the target as played (skipped over)
+    await prisma.song.updateMany({
+      where: { partyId, status: "queued", createdAt: { lt: target.createdAt } },
+      data:  { status: "played" },
+    });
+    const now = new Date();
+    await prisma.song.update({ where: { id: target.id }, data: { status: "playing", startedAt: now } });
+    initPlayback(partyId, now);
+    broadcastPlayback(partyId);
+    await broadcastHistory(partyId);
+    await broadcastQueue(partyId);
+    return res.json({ playing: target });
+  }
+
+  // Normal advance: mark current playing as played, promote next queued
   await prisma.song.updateMany({
     where: { partyId, status: "playing" },
     data:  { status: "played" },
   });
   await broadcastHistory(partyId);
 
-  // Promote next queued song
   const next = await prisma.song.findFirst({
     where:   { partyId, status: "queued" },
     orderBy: { position: "asc" },
@@ -261,6 +291,67 @@ router.post("/advance", async (req: Request<P>, res) => {
 
   await broadcastQueue(partyId);
   return res.json({ playing: next ?? null });
+});
+
+// POST /parties/:partyId/songs/rewind — go back (host only)
+// Optional body.targetSongId: rewind to a specific played song (all songs played after it are restored to queued).
+router.post("/rewind", async (req: Request<P>, res) => {
+  const { partyId }                    = req.params;
+  const { participantId, targetSongId } = req.body;
+
+  const party = await prisma.party.findUnique({ where: { id: partyId } });
+  if (!party) return res.status(404).json({ error: "Party not found" });
+
+  const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+  if (!participant || participant.displayName !== party.hostName) {
+    return res.status(403).json({ error: "Only the host can rewind" });
+  }
+
+  if (targetSongId) {
+    // Rewind-to: jump back to a specific played song
+    const target = await prisma.song.findFirst({ where: { id: targetSongId, partyId, status: "played" } });
+    if (!target) return res.status(409).json({ error: "Target song not in history" });
+
+    // Current playing → queued
+    await prisma.song.updateMany({ where: { partyId, status: "playing" }, data: { status: "queued", startedAt: null } });
+    // All played songs at or after target → queued (restores target + everything played since)
+    await prisma.song.updateMany({
+      where: { partyId, status: "played", startedAt: { gte: target.startedAt } },
+      data:  { status: "queued", startedAt: null },
+    });
+    const now = new Date();
+    await prisma.song.update({ where: { id: target.id }, data: { status: "playing", startedAt: now } });
+    initPlayback(partyId, now);
+    broadcastPlayback(partyId);
+    await broadcastQueue(partyId);
+    await broadcastHistory(partyId);
+    return res.json({ ok: true });
+  }
+
+  // Normal rewind: one step back
+  const lastPlayed = await prisma.song.findFirst({
+    where:   { partyId, status: "played" },
+    orderBy: { startedAt: "desc" },
+  });
+  if (!lastPlayed) return res.status(409).json({ error: "No previous song" });
+
+  await prisma.song.updateMany({
+    where: { partyId, status: "playing" },
+    data:  { status: "queued", startedAt: null },
+  });
+
+  const now = new Date();
+  await prisma.song.update({
+    where: { id: lastPlayed.id },
+    data:  { status: "playing", startedAt: now },
+  });
+
+  initPlayback(partyId, now);
+  broadcastPlayback(partyId);
+  await broadcastQueue(partyId);
+  await broadcastHistory(partyId);
+
+  return res.json({ ok: true });
 });
 
 // POST /parties/:partyId/songs/:songId/approve — approve a pending song (host only)

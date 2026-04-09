@@ -2,28 +2,32 @@
 
 import { useState } from "react";
 
-export default function CircleBtn({ onClick, label, badge, children }) {
+export default function CircleBtn({ onClick, label, badge, disabled = false, children }) {
   const [hovered, setHovered] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, flexShrink: 0 }}>
       <button
-        onClick={onClick}
-        onMouseEnter={() => setHovered(true)}
+        onClick={disabled ? undefined : onClick}
+        onMouseEnter={() => !disabled && setHovered(true)}
         onMouseLeave={() => setHovered(false)}
+        disabled={disabled}
         style={{
           position:       "relative",
           width:          48,
           height:         48,
           borderRadius:   "50%",
-          background:     hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)",
+          background:     disabled
+            ? "rgba(255,255,255,0.03)"
+            : hovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.07)",
           border:         "1px solid rgba(255,255,255,0.12)",
-          cursor:         "pointer",
-          color:          "#fff",
+          cursor:         disabled ? "not-allowed" : "pointer",
+          color:          disabled ? "rgba(255,255,255,0.2)" : "#fff",
           display:        "flex",
           alignItems:     "center",
           justifyContent: "center",
           transition:     "background 0.15s",
           flexShrink:     0,
+          opacity:        disabled ? 0.35 : 1,
         }}
       >
         {children}

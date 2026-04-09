@@ -12,6 +12,8 @@ import Scoreboard   from "../components/Scoreboard";
 import History      from "../components/Peripherals/History";
 import GroupChat    from "../components/Peripherals/GroupChat";
 
+const API = "http://localhost:3000";
+
 const BLOBS = (
   <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }}>
     <div style={{
@@ -36,7 +38,7 @@ const BLOBS = (
 );
 
 export default function StagePage({ onLeave }) {
-  const { partyId, participantId, isHost } = useParty();
+  const { partyId, participantId, isHost, autoAccept: initAutoAccept } = useParty();
   const isMobile = useIsMobile();
 
   const socketRef                       = useRef(null);
@@ -49,10 +51,33 @@ export default function StagePage({ onLeave }) {
   const [partyEnded,   setPartyEnded]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Lifted from MixingTable so both MiddleZone and HostSettings can read/write it
+  const [autoAccept, setAutoAccept] = useState(initAutoAccept ?? true);
+
+  // Winner popup — shown when host ends the party
+  const [showWinner, setShowWinner] = useState(false);
+
   // Mobile-only: which tab is active + unread tracking
   const [activePage,  setActivePage]  = useState("home");
   const [mobileSeen,  setMobileSeen]  = useState(0);
   const mobileUnread = Math.max(0, messages.length - mobileSeen);
+
+  // Compute winning song from history
+  const songScores = history
+    .map((s) => {
+      const ratings = s.ratings ?? [];
+      const avg = ratings.length > 0
+        ? ratings.reduce((sum, r) => sum + r.stars, 0) / ratings.length / 2
+        : 0;
+      return { ...s, avg };
+    })
+    .filter((s) => s.avg > 0)
+    .sort((a, b) => b.avg - a.avg);
+  const winningSong = songScores[0] ?? null;
+  const winnerPart  = winningSong
+    ? participants.find((p) => p.id === winningSong.addedByParticipantId)
+    : null;
+  const winnerName  = winnerPart?.displayName ?? "Unknown";
 
   function handleMobilePageChange(page) {
     if (page === "chat") setMobileSeen(messages.length);
@@ -63,14 +88,25 @@ export default function StagePage({ onLeave }) {
     socketRef.current?.emit("send-message", { partyId, participantId, body });
   }
 
+  // Called by HostSettings when auto-accept is toggled
+  function handleToggleAutoAccept(next) {
+    setAutoAccept(next);
+  }
+
+  // Called by HostSettings when party is ended
+  function handleEndParty() {
+    setShowWinner(true);
+    setPartyEnded(true);
+  }
+
   useEffect(() => {
     if (!partyId || !participantId) return;
 
-    fetch(`http://localhost:3000/parties/${partyId}/songs`)
+    fetch(`${API}/parties/${partyId}/songs`)
       .then((r) => r.json()).then(setQueue).catch(() => {});
-    fetch(`http://localhost:3000/parties/${partyId}/songs/history`)
+    fetch(`${API}/parties/${partyId}/songs/history`)
       .then((r) => r.json()).then(setHistory).catch(() => {});
-    fetch(`http://localhost:3000/parties/${partyId}/messages`)
+    fetch(`${API}/parties/${partyId}/messages`)
       .then((r) => r.json()).then(setMessages).catch(() => {});
 
     const socket = io("http://localhost:3000");
@@ -88,25 +124,98 @@ export default function StagePage({ onLeave }) {
     return () => socket.disconnect();
   }, [partyId, participantId]);
 
+  // ── Winner popup ─────────────────────────────────────────────────────────────
+  const winnerPopup = showWinner && (
+    <div
+      onClick={() => setShowWinner(false)}
+      style={{
+        position: "fixed", inset: 0,
+        background: "rgba(0,0,0,0.88)",
+        backdropFilter: "blur(8px)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "linear-gradient(180deg, #1e1e1e 0%, #111 100%)",
+          border: "1px solid rgba(245,197,24,0.45)",
+          borderRadius: 16,
+          padding: "36px 44px",
+          textAlign: "center",
+          boxShadow: "0 8px 60px rgba(245,197,24,0.18), 0 0 0 1px rgba(245,197,24,0.08)",
+          maxWidth: 420,
+          width: "90vw",
+        }}
+      >
+        <div style={{ fontSize: 36, marginBottom: 10 }}>🏆</div>
+        <div style={{
+          fontSize: 9, fontWeight: 800, letterSpacing: "0.24em",
+          color: "rgba(255,255,255,0.35)", marginBottom: 18,
+        }}>
+          PARTY OVER — WINNING SONG
+        </div>
+
+        {winningSong ? (
+          <>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#f5c518", marginBottom: 6, lineHeight: 1.2 }}>
+              {winningSong.title}
+            </div>
+            <div style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 20 }}>
+              {winningSong.artist}
+            </div>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "rgba(245,197,24,0.08)",
+              border: "1px solid rgba(245,197,24,0.2)",
+              borderRadius: 8, padding: "8px 16px", marginBottom: 12,
+            }}>
+              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>submitted by</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{winnerName}</span>
+            </div>
+            <div style={{ fontSize: 16, color: "#f5c518", fontWeight: 700, letterSpacing: "0.05em" }}>
+              {winningSong.avg.toFixed(1)} ★
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>
+            No rated songs yet.
+          </div>
+        )}
+
+        <button
+          onClick={() => setShowWinner(false)}
+          style={{
+            marginTop: 28, padding: "8px 24px",
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.14)",
+            borderRadius: 8, cursor: "pointer",
+            fontSize: 9, fontWeight: 800, letterSpacing: "0.14em",
+            color: "rgba(255,255,255,0.45)",
+          }}
+        >
+          CLOSE
+        </button>
+      </div>
+    </div>
+  );
+
   // ── Mobile layout ────────────────────────────────────────────────────────────
   if (isMobile) {
     return (
       <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0a0a0a" }}>
         {BLOBS}
+        {winnerPopup}
 
-        {/* Content area — fills everything above the navbar */}
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: NAVBAR_H, zIndex: 1 }}>
-
-          {/* HOME: inline scoreboard + queue/table + search bar */}
           {activePage === "home" && (
             <div style={{
-              position:      "absolute",
-              inset:         0,
-              display:       "flex",
-              flexDirection: "column",
-              overflow:      "hidden",
+              position: "absolute", inset: 0,
+              display: "flex", flexDirection: "column", overflow: "hidden",
             }}>
-              {/* Scoreboard — compact inline at top */}
               <div style={{ flexShrink: 0, zIndex: 2 }}>
                 <Scoreboard
                   songs={history}
@@ -116,7 +225,6 @@ export default function StagePage({ onLeave }) {
                 />
               </div>
 
-              {/* Queue / MixingTable — fills remaining space */}
               <div style={{ flex: 1, position: "relative", overflow: "visible", zIndex: 1 }}>
                 <MiddleZone
                   isHost={isHost}
@@ -125,24 +233,22 @@ export default function StagePage({ onLeave }) {
                   participants={participants}
                   isPaused={playback.isPaused}
                   effectiveStartTime={playback.effectiveStartTime}
+                  autoAccept={autoAccept}
                 />
               </div>
 
-              {/* AddSong — pinned at bottom of home page */}
               <div style={{
-                flexShrink:     0,
-                padding:        "10px 16px",
-                background:     "rgba(0,0,0,0.75)",
+                flexShrink: 0, padding: "10px 16px",
+                background: "rgba(0,0,0,0.75)",
                 backdropFilter: "blur(14px)",
-                borderTop:      "1px solid rgba(255,255,255,0.08)",
-                zIndex:         2,
+                borderTop: "1px solid rgba(255,255,255,0.08)",
+                zIndex: 2,
               }}>
                 <AddSong partyEnded={partyEnded} />
               </div>
             </div>
           )}
 
-          {/* VOTE: full-page history + scoreboard */}
           {activePage === "vote" && (
             <History
               fullPage
@@ -152,7 +258,6 @@ export default function StagePage({ onLeave }) {
             />
           )}
 
-          {/* CHAT: full-page group chat */}
           {activePage === "chat" && (
             <GroupChat
               fullPage
@@ -162,7 +267,6 @@ export default function StagePage({ onLeave }) {
           )}
         </div>
 
-        {/* Fixed bottom navbar */}
         <MobileNavbar
           activePage={activePage}
           onChange={handleMobilePageChange}
@@ -176,6 +280,7 @@ export default function StagePage({ onLeave }) {
   return (
     <div style={{ position: "fixed", inset: 0, overflow: "hidden", background: "#0a0a0a" }}>
       {BLOBS}
+      {winnerPopup}
 
       {/* TOP (0–20%) */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "20%", zIndex: 5 }}>
@@ -191,7 +296,14 @@ export default function StagePage({ onLeave }) {
       {/* Host Settings overlay */}
       {showSettings && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
-          <HostSettings onGoToStage={() => setShowSettings(false)} />
+          <HostSettings
+            autoAccept={autoAccept}
+            onToggleAutoAccept={handleToggleAutoAccept}
+            history={history}
+            participants={participants}
+            onEndParty={handleEndParty}
+            onGoToStage={() => setShowSettings(false)}
+          />
         </div>
       )}
 
@@ -204,6 +316,7 @@ export default function StagePage({ onLeave }) {
           participants={participants}
           isPaused={playback.isPaused}
           effectiveStartTime={playback.effectiveStartTime}
+          autoAccept={autoAccept}
         />
       </div>
 

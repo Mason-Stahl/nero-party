@@ -97,19 +97,19 @@ Also i would like to export the play history as a playlist, creating a youtube p
 
 ## TO DO
 3. Design Changes
-- split scoreboard (info and scoreboard)
-- Info Bar (remove scoreboard) + (*for host* add Settings button)
-- integrate mixing table buttons -> settings
-- Remove info from top of Vote scoreboard
 
-- fix purple in suggested
-- new design GC + Vote
-- fix GC mobile moving everything up bug
+- new design GC + Vote (DarkPanel)
+
+- top standing bar is not clear, give it the glassPanel treatment and put it on the same level as settings. Make the leavebutton the same kind of Btn as the others 
 
 - queue redesign (Text larger, album art smaller, more than 3 in history, border larger)
 
+- fix GC mobile moving everything up bug
 - mobile reponsive move middle NERO PARTY TO left of navbar 
 - mobile responsive settings page collapsable left side into hamburger menu
+
+- add Stars to the vote for the song that is selected. When vote is clicked StarRating appears above it (then when does someone want to see full history or standings?)
+
 - if join from link LobbyPage with just name entry. 
 
 
