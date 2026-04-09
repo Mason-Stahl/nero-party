@@ -1,5 +1,10 @@
 // Scoreboard — TV screen at top of stage.
 // Rows = participants, scored by avg rating across all their played songs (0 until rated).
+//
+// section prop:
+//   "all"    (default) — status bar + chart
+//   "status" — only the top status bar (joinCode replaced with "connected: N")
+//   "scores" — only the chart (header + rows)
 
 import { useParty } from "../context/PartyContext";
 
@@ -64,8 +69,19 @@ function ParticipantRow({ name, avg, rank, maxAvg, hasScores }) {
   );
 }
 
-export default function Scoreboard({ songs = [], participants = [], connected = false, onLeave, inline = false }) {
-  const { groupName, joinCode } = useParty();
+export default function Scoreboard({
+  songs = [],
+  participants = [],
+  connected = false,
+  onLeave,
+  inline = false,
+  section = "all",
+}) {
+  const { groupName, participantId } = useParty();
+  const displayName = participants.find((p) => p.id === participantId)?.displayName ?? "";
+
+  const showStatus = section === "all" || section === "status";
+  const showScores = section === "all" || section === "scores";
 
   // Per-participant avg across all their played+rated songs
   const rows = participants.map((p) => {
@@ -106,92 +122,97 @@ export default function Scoreboard({ songs = [], participants = [], connected = 
   return (
     <div style={outerStyle}>
 
-      {/* ── top bar: group ID + connection ── */}
-      <div style={{
-        display: "flex", alignItems: "center",
-        marginBottom: 8, paddingBottom: 7,
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
-      }}>
-        <span style={{
-          fontFamily: "sans-serif", fontSize: 11,
-          fontWeight: 700, letterSpacing: "0.1em",
-          color: "rgba(255,255,255,0.5)",
-        }}>
-          {groupName?.toUpperCase()} · {joinCode}
-        </span>
-        <span style={{
-          marginLeft: "auto", fontFamily: "sans-serif", fontSize: 11,
-          color: connected ? "rgb(34,197,94)" : "#f87171",
-        }}>
-          {connected ? "● live" : "○ connecting…"}
-        </span>
-        {!inline && (
-          <button
-            onClick={onLeave ?? (() => window.location.reload())}
-            style={{
-              marginLeft:    10,
-              padding:       "2px 8px",
-              background:    "rgba(255,255,255,0.07)",
-              border:        "1px solid rgba(255,255,255,0.15)",
-              borderRadius:  4,
-              cursor:        "pointer",
-              fontFamily:    "sans-serif",
-              fontSize:      9,
-              fontWeight:    700,
-              letterSpacing: "0.06em",
-              color:         "rgba(255,255,255,0.45)",
-              transition:    "background 0.15s, color 0.15s",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "#f87171"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
-          >
-            LEAVE
-          </button>
-        )}
-      </div>
-
-      {/* ── scoreboard header ── */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: 13 }}>🏆</span>
-        <span style={{
-          fontFamily: "sans-serif", fontSize: 10,
-          fontWeight: 700, letterSpacing: "0.12em",
-          color: "rgba(255,255,255,0.35)",
-        }}>
-          SCOREBOARD
-        </span>
-        {anyScored && (
-          <span style={{
-            marginLeft: "auto", fontFamily: "sans-serif", fontSize: 10,
-            color: GOLD, fontWeight: 700, letterSpacing: "0.05em",
-          }}>
-            WINNER: {rows[0].name}
-          </span>
-        )}
-      </div>
-
-      {/* ── no scores yet placeholder ── */}
-      {!anyScored && (
+      {/* ── top bar: group name + connection status ── */}
+      {showStatus && (
         <div style={{
-          fontFamily: "sans-serif", fontSize: 11,
-          color: "rgba(255,255,255,0.25)",
-          marginBottom: 6,
+          display: "flex", alignItems: "center",
+          marginBottom: showScores ? 8 : 0,
+          paddingBottom: showScores ? 7 : 0,
+          borderBottom: showScores ? "1px solid rgba(255,255,255,0.08)" : "none",
         }}>
-          No scores yet — rate played songs in History
+          <span style={{
+            fontFamily: "sans-serif", fontSize: 11,
+            fontWeight: 700, letterSpacing: "0.1em",
+            color: "rgba(255,255,255,0.5)",
+          }}>
+            {displayName} · {groupName?.toUpperCase()} · connected: {participants.length}
+          </span>
+          <span style={{
+            marginLeft: "auto", fontFamily: "sans-serif", fontSize: 11,
+            color: connected ? "rgb(34,197,94)" : "#f87171",
+          }}>
+            {connected ? "● live" : "○ connecting…"}
+          </span>
+          {!inline && (
+            <button
+              onClick={onLeave ?? (() => window.location.reload())}
+              style={{
+                marginLeft:    10,
+                padding:       "2px 8px",
+                background:    "rgba(255,255,255,0.07)",
+                border:        "1px solid rgba(255,255,255,0.15)",
+                borderRadius:  4,
+                cursor:        "pointer",
+                fontFamily:    "sans-serif",
+                fontSize:      9,
+                fontWeight:    700,
+                letterSpacing: "0.06em",
+                color:         "rgba(255,255,255,0.45)",
+                transition:    "background 0.15s, color 0.15s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "#f87171"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
+            >
+              LEAVE
+            </button>
+          )}
         </div>
       )}
 
-      {/* ── participant rows ── */}
-      {rows.map((row, i) => (
-        <ParticipantRow
-          key={row.id}
-          name={row.name}
-          avg={row.avg}
-          rank={i + 1}
-          maxAvg={maxAvg}
-          hasScores={anyScored}
-        />
-      ))}
+      {/* ── scoreboard chart ── */}
+      {showScores && (
+        <>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 13 }}>🏆</span>
+            <span style={{
+              fontFamily: "sans-serif", fontSize: 10,
+              fontWeight: 700, letterSpacing: "0.12em",
+              color: "rgba(255,255,255,0.35)",
+            }}>
+              SCOREBOARD
+            </span>
+            {anyScored && (
+              <span style={{
+                marginLeft: "auto", fontFamily: "sans-serif", fontSize: 10,
+                color: GOLD, fontWeight: 700, letterSpacing: "0.05em",
+              }}>
+                WINNER: {rows[0].name}
+              </span>
+            )}
+          </div>
+
+          {!anyScored && (
+            <div style={{
+              fontFamily: "sans-serif", fontSize: 11,
+              color: "rgba(255,255,255,0.25)",
+              marginBottom: 6,
+            }}>
+              No scores yet — rate played songs in History
+            </div>
+          )}
+
+          {rows.map((row, i) => (
+            <ParticipantRow
+              key={row.id}
+              name={row.name}
+              avg={row.avg}
+              rank={i + 1}
+              maxAvg={maxAvg}
+              hasScores={anyScored}
+            />
+          ))}
+        </>
+      )}
     </div>
   );
 }

@@ -1,118 +1,82 @@
-import { useState, useEffect } from "react";
-import AddSong from "../components/AddSong";
-import GroupChat from "../components/Peripherals/GroupChat";
+import { useState } from "react";
+import AddSong   from "../AddSong";
+import GroupChat from "../Peripherals/GroupChat";
+import History   from "../Peripherals/History";
+import CircleBtn from "../CircleBtn";
+import DarkPanel from "../DarkPanel";
 
-export default function BottomBar({ messages, onSendMessage, partyEnded }) {
+import GlassPanel from "../GlassPanel";
+
+
+// ── BottomBar ──────────────────────────────────────────────────────────────────
+export default function BottomBar({ messages, onSendMessage, partyEnded, songs, participants, connected }) {
   const [chatOpen,  setChatOpen]  = useState(false);
+  const [voteOpen,  setVoteOpen]  = useState(false);
   const [seenCount, setSeenCount] = useState(0);
-  const [hovered,   setHovered]   = useState(false);
 
   const unread = Math.max(0, messages.length - seenCount);
 
-  useEffect(() => {
-    if (chatOpen) setSeenCount(messages.length);
-  }, [messages, chatOpen]);
+  function handleChatToggle() {
+    if (!chatOpen) setSeenCount(messages.length);
+    setChatOpen((o) => !o);
+  }
 
-  function handleToggle() {
-    setChatOpen((o) => {
-      if (!o) setSeenCount(messages.length);
-      return !o;
-    });
+  function handleVoteToggle() {
+    setVoteOpen((o) => !o);
   }
 
   return (
-    // Vertically center the bar content within the bottom zone
     <div style={{
-      position:       "absolute",
-      inset:          0,
-      display:        "flex",
-      alignItems:     "center",
-      justifyContent: "center",
-      padding:        "0 24px",
-      gap:            16,
+      position:        "absolute",
+      inset:           0,
+      display:         "flex",
+      alignItems:      "center",
+      justifyContent:  "center",
+      padding:         "0 24px",
+      gap:             16,
     }}>
 
-      {/* Search bar */}
-      <div style={{ flex: 1, maxWidth: 560 }}>
+      {/* Vote button */}
+      <CircleBtn onClick={handleVoteToggle} label="VOTE">
+        {/* trophy icon */}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+          <path d="M4 22h16"/>
+          <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+          <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+          <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+        </svg>
+      </CircleBtn>
+
+      {/* Song search */}
+      <GlassPanel style={{ flex: 1, maxWidth: 560, padding: "12px 16px" }}>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.14em", color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>
+          ADD SONG TO QUEUE
+        </div>
         <AddSong partyEnded={partyEnded} />
-      </div>
+      </GlassPanel>
 
-      {/* Group Chat button + label */}
-      <div style={{
-        display:        "flex",
-        flexDirection:  "column",
-        alignItems:     "center",
-        gap:            5,
-        flexShrink:     0,
-      }}>
-        <button
-          onClick={handleToggle}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          style={{
-            width:              48,
-            height:             48,
-            borderRadius:       "50%",
-            background:         hovered
-              ? "rgba(255,255,255,0.16)"
-              : chatOpen
-                ? "rgba(255,255,255,0.13)"
-                : "rgba(255,255,255,0.09)",
-            border:             `1px solid ${chatOpen ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.15)"}`,
-            cursor:             "pointer",
-            display:            "flex",
-            alignItems:         "center",
-            justifyContent:     "center",
-            position:           "relative",
-            backdropFilter:     "blur(12px)",
-            WebkitBackdropFilter: "blur(12px)",
-            transition:         "background 0.15s, border-color 0.15s",
-            boxShadow:          "0 2px 12px rgba(0,0,0,0.35)",
-          }}
-        >
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none"
-            stroke="rgba(255,255,255,0.8)" strokeWidth="1.8"
-            strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
+      {/* Group chat button */}
+      <CircleBtn onClick={handleChatToggle} label="GROUP CHAT" badge={unread}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </CircleBtn>
 
-          {/* Unread badge */}
-          {unread > 0 && (
-            <div style={{
-              position:       "absolute",
-              top:            -3, right: -3,
-              background:     "#e74c3c",
-              color:          "#fff",
-              borderRadius:   "50%",
-              width:          16, height: 16,
-              display:        "flex",
-              alignItems:     "center",
-              justifyContent: "center",
-              fontSize:       8,
-              fontWeight:     700,
-              border:         "1.5px solid #0a0a0a",
-            }}>
-              {unread > 9 ? "9+" : unread}
-            </div>
-          )}
-        </button>
-
-        <span style={{
-          fontSize:      9,
-          fontWeight:    600,
-          letterSpacing: "0.06em",
-          color:         "rgba(255,255,255,0.45)",
-          userSelect:    "none",
-          whiteSpace:    "nowrap",
-        }}>
-          GROUP CHAT
-        </span>
-      </div>
-
-      {/* Group Chat slide-in panel (portal) */}
+      {/* Panels */}
+      <History
+        open={voteOpen}
+        onClose={handleVoteToggle}
+        songs={songs}
+        participants={participants}
+        connected={connected}
+      />
       <GroupChat
         open={chatOpen}
-        onClose={handleToggle}
+        onClose={handleChatToggle}
         messages={messages}
         onSendMessage={onSendMessage}
       />

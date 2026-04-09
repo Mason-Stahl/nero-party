@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParty } from "../context/PartyContext";
 import Player from "./Player";
+import DarkPanel, { DarkDivider } from "./DarkPanel";
 
 const API = "http://localhost:3000";
 
@@ -380,14 +381,7 @@ export default function MixingTable({ songs, history = [], participants, isPause
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div style={{
-      background: "linear-gradient(180deg, #1e1e1e 0%, #111 100%)",
-      border: "1px solid rgba(255,255,255,0.07)",
-      borderRadius: 16,
-      overflow: "hidden",
-      boxShadow: "0 8px 40px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.05)",
-      width: "100%",
-    }}>
+    <DarkPanel clip style={{ width: "100%" }}>
       <style>{SPIN_CSS}</style>
 
       {/* ── Header ── */}
@@ -431,11 +425,7 @@ export default function MixingTable({ songs, history = [], participants, isPause
       </div>
 
       {/* ── Divider ── */}
-      <div style={{
-        height: 1,
-        margin: "0 18px",
-        background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)",
-      }} />
+      <div style={{ margin: "0 18px" }}><DarkDivider /></div>
 
       {/* ── Winner Popup ── */}
       {showWinner && (
@@ -650,6 +640,6 @@ export default function MixingTable({ songs, history = [], participants, isPause
           />
         </div>
       </div>
-    </div>
+    </DarkPanel>
   );
 }

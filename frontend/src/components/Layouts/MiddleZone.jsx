@@ -1,5 +1,5 @@
-import Queue from "../components/Queue";
-import MixingTable from "../components/MixingTable";
+import Queue from "../Queue";
+import MixingTable from "../MixingTable";
 
 export default function MiddleZone({
   isHost,
@@ -37,3 +37,4 @@ export default function MiddleZone({
     </div>
   );
 }
+

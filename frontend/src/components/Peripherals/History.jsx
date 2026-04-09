@@ -152,7 +152,7 @@ function SongRow({ song, number, participantId, partyId, expanded, onToggle }) {
               Can't rate your own song
             </div>
           ) : isRated ? (
-            <div>
+            <div style={{gap: "5px"}}>
               <StarRating rating={myRating ? myRating.stars / 2 : dispStars} readOnly />
               <div style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 3 }}>Rated ✓</div>
             </div>
@@ -198,8 +198,8 @@ function HistoryContent({ songs, participants, connected }) {
 
   return (
     <>
-      {/* Scoreboard at top */}
-      <Scoreboard songs={songs} participants={participants} connected={connected} inline />
+      {/* Scoreboard at top — scores only, no status bar */}
+      <Scoreboard songs={songs} participants={participants} connected={connected} inline section="scores" />
 
       {/* History header */}
       <div style={{

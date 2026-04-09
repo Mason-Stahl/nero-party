@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 import { useParty } from "../context/PartyContext";
 import { useIsMobile } from "../lib/useIsMobile";
-import TopBar       from "./TopBar";
-import MiddleZone   from "./MiddleZone";
-import BottomBar    from "./BottomBar";
+import TopBar       from "../components/Layouts/TopBar";
+import MiddleZone   from "../components/Layouts/MiddleZone";
+import BottomBar    from "../components/Layouts/BottomBar";
+import HostSettings from "./HostSettings";
 import MobileNavbar, { NAVBAR_H } from "./MobileNavbar";
 import AddSong      from "../components/AddSong";
 import Scoreboard   from "../components/Scoreboard";
@@ -16,19 +17,19 @@ const BLOBS = (
     <div style={{
       position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)",
       width: 600, height: 600,
-      background: "radial-gradient(circle, rgba(74,222,128,0.08), transparent 70%)",
+      background: "radial-gradient(circle, rgba(74,222,128,0.05), transparent 70%)",
       filter: "blur(40px)",
     }} />
     <div style={{
       position: "absolute", bottom: "-10%", left: "-5%",
       width: 500, height: 500,
-      background: "radial-gradient(circle, rgba(120,80,255,0.08), transparent 70%)",
+      background: "radial-gradient(circle, rgba(120,80,255,0.05), transparent 70%)",
       filter: "blur(40px)",
     }} />
     <div style={{
       position: "absolute", bottom: "-10%", right: "-5%",
       width: 500, height: 500,
-      background: "radial-gradient(circle, rgba(34,211,238,0.07), transparent 70%)",
+      background: "radial-gradient(circle, rgba(34,211,238,0.05), transparent 70%)",
       filter: "blur(40px)",
     }} />
   </div>
@@ -46,6 +47,7 @@ export default function StagePage({ onLeave }) {
   const [playback,     setPlayback]     = useState({ isPaused: false, effectiveStartTime: null });
   const [messages,     setMessages]     = useState([]);
   const [partyEnded,   setPartyEnded]   = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Mobile-only: which tab is active + unread tracking
   const [activePage,  setActivePage]  = useState("home");
@@ -182,8 +184,16 @@ export default function StagePage({ onLeave }) {
           participants={participants}
           connected={connected}
           onLeave={onLeave}
+          onOpenSettings={() => setShowSettings(true)}
         />
       </div>
+
+      {/* Host Settings overlay */}
+      {showSettings && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100 }}>
+          <HostSettings onGoToStage={() => setShowSettings(false)} />
+        </div>
+      )}
 
       {/* MIDDLE (20–70%) */}
       <div style={{ position: "absolute", top: "20%", left: 0, right: 0, height: "50%", overflow: "visible", zIndex: 2 }}>

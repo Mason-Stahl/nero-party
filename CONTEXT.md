@@ -15,7 +15,7 @@ Use the provided starter repo which includes:
 - **Frontend:** React, Vite, TailwindCSS (basic boilerplate)
 - **Database:** SQLite (local, no setup required)
 - **Playback:** Youtube URLS 
-- **Search:** LastFM/Deezer Thing i was builidng before for autofill song search. *or* just possible to use youtube search.
+- **Search:** LastFM
 
 # Tech Structure 
 

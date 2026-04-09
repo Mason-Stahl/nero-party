@@ -97,6 +97,21 @@ Also i would like to export the play history as a playlist, creating a youtube p
 
 ## TO DO
 3. Design Changes
+- split scoreboard (info and scoreboard)
+- Info Bar (remove scoreboard) + (*for host* add Settings button)
+- integrate mixing table buttons -> settings
+- Remove info from top of Vote scoreboard
+
+- fix purple in suggested
+- new design GC + Vote
+- fix GC mobile moving everything up bug
+
+- queue redesign (Text larger, album art smaller, more than 3 in history, border larger)
+
+- mobile reponsive move middle NERO PARTY TO left of navbar 
+- mobile responsive settings page collapsable left side into hamburger menu
+- if join from link LobbyPage with just name entry. 
+
 
 ### Designs to keep: 
 - Groupchat Phone
@@ -131,11 +146,3 @@ middle - horizontal scrollwheel queue,
 navbar - [vote, home, groupchat]
 
 ### notes
-
--mobile reponsive move middle NERO PARTY TO left of navbar 
--green lets go for host - prob remove
--mobile responsive settings page collapsable left side into hamburger menu
-
-
--if join from link LobbyPage with just name entry. 
-

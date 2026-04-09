@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import Btn from "../components/Btn";
+import GlassPanel from "../components/GlassPanel";
+import DarkPanel from "../components/DarkPanel";
+import Input from "../components/Input";
 
 const API = "http://localhost:3000";
 const MUTED = "rgba(255,255,255,0.5)";
@@ -10,49 +13,27 @@ const GREEN = "#4ade80";
 // size { w, h } in px, and blur in px. Opacity is baked into the rgba alpha.
 const BLOBS = [
   {
-    color: "rgba(74,222,128,0.1)",   // green
+    color: "rgba(74,222,128,0.05)",   // green
     top: "-15%", left: "50%",
     transform: "translateX(-45%)",
     w: 600, h: 400,
     blur: 100,
   },
   {
-    color: "rgba(139,92,246,0.1)",   // purple
+    color: "rgba(139,92,246,0.05)",   // purple
     bottom: "-10%", left: "-10%",
     w: 500, h: 400,
     blur: 100,
   },
   {
-    color: "rgba(34,211,238,0.1)",   // teal
+    color: "rgba(34,211,238,0.05)",   // teal
     bottom: "10%", right: "-5%",
     w: 380, h: 300,
     blur: 100,
   },
 ];
 
-// ── Glass card ────────────────────────────────────────────────────────────────
-// inset highlight on top edge gives the "liquid" refraction feel
-const CARD = {
-  background: "rgba(255,255,255,0.05)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: 16,
-  backdropFilter: "blur(28px) saturate(160%)",
-  WebkitBackdropFilter: "blur(28px) saturate(160%)",
-  boxShadow: "0 8px 32px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)",
-};
 
-const inputStyle = {
-  width: "100%",
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  borderRadius: 10,
-  padding: "8px 12px",
-  fontSize: 13,
-  color: "#fff",
-  outline: "none",
-  fontFamily: "inherit",
-  boxSizing: "border-box",
-};
 
 function Label({ children }) {
   return (
@@ -62,8 +43,14 @@ function Label({ children }) {
   );
 }
 
+function CardShell({ dark, style, children }) {
+  const Panel = dark ? DarkPanel : GlassPanel;
+  return <Panel style={{ width: "100%", maxWidth: 560, ...style }}>{children}</Panel>;
+}
+
 export default function LobbyPage({ onComplete }) {
   const [name, setName] = useState("");
+  const [darkCards, setDarkCards] = useState(false);
 
   // host panel
   const [showHost, setShowHost] = useState(false);
@@ -211,24 +198,50 @@ export default function LobbyPage({ onComplete }) {
 
 
 
+        {/* Card style toggle */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, alignSelf: "flex-end" }}>
+          <span style={{ fontSize: 10, letterSpacing: "0.12em", color: "rgba(255,255,255,0.25)" }}>CARD</span>
+          {["glass", "dark"].map((mode) => (
+            <button
+              key={mode}
+              onClick={() => setDarkCards(mode === "dark")}
+              style={{
+                padding: "3px 10px",
+                borderRadius: 20,
+                border: `1px solid ${(darkCards ? mode === "dark" : mode === "glass") ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.08)"}`,
+                background: (darkCards ? mode === "dark" : mode === "glass") ? "rgba(255,255,255,0.08)" : "transparent",
+                color: (darkCards ? mode === "dark" : mode === "glass") ? "#fff" : "rgba(255,255,255,0.3)",
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                textTransform: "uppercase",
+              }}
+            >
+              {mode}
+            </button>
+          ))}
+        </div>
+
         {/* Name card — always visible */}
-        <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
+        <CardShell dark={darkCards} style={{ padding: "20px 24px" }}>
           <Label>YOUR NAME</Label>
-          <input
+          <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="what do they call you?"
-            style={{ ...inputStyle, fontSize: 15, padding: "10px 14px" }}
+            style={{ fontSize: 15, padding: "10px 14px" }}
             autoFocus
           />
-        </div>
+        </CardShell>
 <div></div>
                 <div><p>Join an open party from the list, or host your own and share the code
 
 </p></div>
         {/* Guest list card */}
         {!showHost && (
-          <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
+          <CardShell dark={darkCards} style={{ padding: "20px 24px" }}>
             <div style={{ paddingLeft: 12 }}><Label>GUEST LIST</Label></div>
 
             {listLoading && (
@@ -288,14 +301,14 @@ export default function LobbyPage({ onComplete }) {
 
                       {isExpanded && (
                         <div style={{ display: "flex", gap: 6, alignItems: "center", paddingBottom: 10 }}>
-                          <input
+                          <Input
                             autoFocus
                             type="password"
                             value={codeword}
                             onChange={(e) => setCodeword(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && canJoin && handleJoin(party, codeword)}
                             placeholder="codeword"
-                            style={{ ...inputStyle, flex: 1, padding: "6px 10px" }}
+                            style={{ flex: 1, padding: "6px 10px" }}
                           />
                           <Btn
                             size="sm"
@@ -318,33 +331,31 @@ export default function LobbyPage({ onComplete }) {
             {joinError && (
               <div style={{ fontSize: 12, color: "#f87171", marginTop: 8, paddingLeft: 12 }}>{joinError}</div>
             )}
-          </div>
+          </CardShell>
         )}
 
         {/* New party card */}
         {showHost && (
-          <div style={{ ...CARD, width: "100%", maxWidth: 560, padding: "20px 24px" }}>
+          <CardShell dark={darkCards} style={{ padding: "20px 24px" }}>
             <div style={{ padding: "0 12px" }}>
               <Label>HOST A NEW PARTY</Label>
 
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 4 }}>Group name</label>
-                <input
+                <Input
                   value={group}
                   onChange={(e) => setGroup(e.target.value)}
                   placeholder="what's the crew called?"
-                  style={inputStyle}
                   autoFocus
                 />
               </div>
 
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 4 }}>Vibe (optional)</label>
-                <input
+                <Input
                   value={vibe}
                   onChange={(e) => setVibe(e.target.value)}
                   placeholder="lofi, hardstyle, anything goes…"
-                  style={inputStyle}
                 />
               </div>
 
@@ -363,12 +374,11 @@ export default function LobbyPage({ onComplete }) {
               {isPrivate && (
                 <div style={{ marginBottom: 12 }}>
                   <label style={{ fontSize: 12, color: MUTED, display: "block", marginBottom: 4 }}>Codeword</label>
-                  <input
+                  <Input
                     type="password"
                     value={hostCodeword}
                     onChange={(e) => setHostCodeword(e.target.value)}
                     placeholder="secret word"
-                    style={inputStyle}
                   />
                 </div>
               )}
@@ -388,7 +398,7 @@ export default function LobbyPage({ onComplete }) {
                 {hosting ? "Creating…" : "Let's Go →"}
               </Btn>
             </div>
-          </div>
+          </CardShell>
         )}
 
         {/* Toggle row */}

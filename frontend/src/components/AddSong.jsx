@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useParty } from "../context/PartyContext";
+import GlassPanel from "./GlassPanel";
+import DarkPanel from "./DarkPanel";
+
+import Input from "./Input";
+
 
 const DEBOUNCE_MS = 300;
 
@@ -28,7 +33,6 @@ export default function AddSong({ onAdded, partyEnded = false }) {
   const [open,          setOpen]          = useState(false);
   const [loading,       setLoading]       = useState(false);
   const [searching,     setSearching]     = useState(false);
-  const [focused,       setFocused]       = useState(false);
   const [error,         setError]         = useState(null);
   const timerRef  = useRef(null);
   const wrapRef   = useRef(null);
@@ -132,17 +136,12 @@ export default function AddSong({ onAdded, partyEnded = false }) {
     <div ref={wrapRef} style={{ display: "flex", flexDirection: "column", gap: 6, position: "relative" }}>
       {/* Suggestion dropdown — above the input */}
       {open && suggestions.length > 0 && (
-        <div style={{
-          position:     "absolute",
-          bottom:       "calc(100% + 4px)",
-          left:         0,
-          right:        0,
-          background:   "rgba(18,8,36,0.97)",
-          border:       "1px solid rgba(167,139,250,0.35)",
-          borderRadius: 10,
-          overflow:     "hidden",
-          zIndex:       200,
-          boxShadow:    "0 -4px 24px rgba(0,0,0,0.65)",
+        <DarkPanel style={{
+          position: "absolute",
+          bottom:   "calc(100% + 4px)",
+          left:     0,
+          right:    0,
+          zIndex:   200,
         }}>
           {suggestions.map((track, i) => (
             <SuggestionRow
@@ -151,34 +150,22 @@ export default function AddSong({ onAdded, partyEnded = false }) {
               onSelect={handleSelect}
             />
           ))}
-        </div>
+        </DarkPanel>
       )}
 
       {/* Input row */}
       <div style={{ display: "flex", gap: 6 }}>
-        <input
+        <Input
           value={query}
           onChange={handleQueryChange}
-          onFocus={() => { setFocused(true); if (!lockedRef.current && suggestions.length) setOpen(true); }}
-          onBlur={() => setFocused(false)}
+          onFocus={() => { if (!lockedRef.current && suggestions.length) setOpen(true); }}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSubmit();
             if (e.key === "Escape") setOpen(false);
           }}
-          placeholder="Search songs or paste a YouTube URL…"
+          placeholder="search by name or paste a YouTube URL…"
           disabled={loading}
-          style={{
-            flex:         1,
-            background:   "rgba(255,255,255,0.08)",
-            border:       `1px solid ${focused ? "rgba(167,139,250,0.55)" : "rgba(255,255,255,0.2)"}`,
-            borderRadius: 8,
-            padding:      "6px 12px",
-            fontSize:     12,
-            color:        "#fff",
-            outline:      "none",
-            fontFamily:   "inherit",
-            transition:   "border-color 0.2s",
-          }}
+          style={{ flex: 1 }}
         />
         {/* Spinner while searching LastFM */}
         {searching && (
@@ -228,7 +215,7 @@ function SuggestionRow({ track, onSelect }) {
         gap:           8,
         padding:       "7px 10px",
         cursor:        "pointer",
-        background:    hovered ? "rgba(167,139,250,0.15)" : "transparent",
+        background:    hovered ? "rgba(255,255,255,0.07)" : "transparent",
         transition:    "background 0.1s",
         borderBottom:  "1px solid rgba(255,255,255,0.06)",
       }}
