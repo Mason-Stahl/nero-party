@@ -100,7 +100,7 @@ Also i would like to export the play history as a playlist, creating a youtube p
 
 - new design GC + Vote (DarkPanel)
 
-- top standing bar is not clear, give it the glassPanel treatment and put it on the same level as settings. Make the leavebutton the same kind of Btn as the others 
+- top standing bar is not clear, give it the glassPanel treatment and put it on the same level as settings. Make the leavebutton the same kind of Btn as the others. 
 
 - queue redesign (Text larger, album art smaller, more than 3 in history, border larger)
 
@@ -109,6 +109,10 @@ Also i would like to export the play history as a playlist, creating a youtube p
 - mobile responsive settings page collapsable left side into hamburger menu
 
 - add Stars to the vote for the song that is selected. When vote is clicked StarRating appears above it (then when does someone want to see full history or standings?)
+
+- maybe vote gets to be a button under each song
+
+- bottom vote turns into scoreboard (scoreboard obv and history + easy vote checking of history)
 
 - if join from link LobbyPage with just name entry. 
 

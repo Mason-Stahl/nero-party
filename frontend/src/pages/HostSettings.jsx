@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParty } from "../context/PartyContext";
+import { useIsMobile } from "../lib/useIsMobile";
 import CircleBtn from "../components/CircleBtn";
 import Btn from "../components/Btn";
 
@@ -384,7 +385,14 @@ export default function HostSettings({
   onEndParty,
   onGoToStage,
 }) {
-  const [active, setActive] = useState("invite");
+  const isMobile = useIsMobile();
+  const [active,      setActive]      = useState("invite");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  function handleNavSelect(id) {
+    setActive(id);
+    if (isMobile) setSidebarOpen(false);
+  }
 
   const renderContent = () => {
     switch (active) {
@@ -413,12 +421,15 @@ export default function HostSettings({
 
   return (
     <div style={{
+      height:         "100%",
       minHeight:      "100vh",
       background:     "#0a0a0a",
       color:          "#fff",
       fontFamily:     "inherit",
       display:        "flex",
       flexDirection:  "column",
+      position:       "relative",
+      overflow:       "hidden",
     }}>
       {/* Navbar */}
       <nav style={{
@@ -434,6 +445,28 @@ export default function HostSettings({
         backdropFilter:    "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
       }}>
+        {/* Hamburger — mobile only */}
+        {isMobile && (
+          <button
+            onClick={() => setSidebarOpen((o) => !o)}
+            style={{
+              position:       "absolute",
+              left:           16,
+              background:     "none",
+              border:         "none",
+              color:          sidebarOpen ? "#fff" : MUTED,
+              fontSize:       20,
+              cursor:         "pointer",
+              padding:        "4px 8px",
+              display:        "flex",
+              alignItems:     "center",
+              lineHeight:     1,
+              transition:     "color 0.15s",
+            }}
+          >
+            {sidebarOpen ? "✕" : "☰"}
+          </button>
+        )}
         <span style={{ fontSize: 20, fontWeight: 800, letterSpacing: "0.18em", textTransform: "uppercase" }}>
           Host Settings
         </span>
@@ -463,7 +496,21 @@ export default function HostSettings({
       </nav>
 
       {/* Body */}
-      <div style={{ display: "flex", flex: 1 }}>
+      <div style={{ display: "flex", flex: 1, position: "relative", overflow: "hidden" }}>
+
+        {/* Mobile backdrop */}
+        {isMobile && sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{
+              position:   "absolute",
+              inset:      0,
+              background: "rgba(0,0,0,0.55)",
+              zIndex:     10,
+            }}
+          />
+        )}
+
         {/* Sidebar */}
         <div style={{
           width:          200,
@@ -473,13 +520,24 @@ export default function HostSettings({
           display:        "flex",
           flexDirection:  "column",
           gap:            2,
+          ...(isMobile ? {
+            position:   "absolute",
+            top:        0,
+            left:       0,
+            height:     "100%",
+            zIndex:     11,
+            background: "#0a0a0a",
+            borderRight: "1px solid rgba(255,255,255,0.12)",
+            transform:  sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+            transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
+          } : {}),
         }}>
           {NAV_ITEMS.map((item) => {
             const isActive = active === item.id;
             return (
               <button
                 key={item.id}
-                onClick={() => setActive(item.id)}
+                onClick={() => handleNavSelect(item.id)}
                 style={{
                   background:  isActive ? "rgba(255,255,255,0.06)" : "none",
                   border:      "none",
@@ -504,7 +562,7 @@ export default function HostSettings({
         </div>
 
         {/* Main content */}
-        <div style={{ flex: 1, padding: "36px 40px", overflowY: "auto" }}>
+        <div style={{ flex: 1, padding: isMobile ? "24px 20px" : "36px 40px", overflowY: "auto" }}>
           {renderContent()}
         </div>
       </div>

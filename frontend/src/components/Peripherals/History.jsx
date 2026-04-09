@@ -282,7 +282,7 @@ export default function History({ open, onClose, songs = [], participants = [], 
         inset:         0,
         display:       "flex",
         flexDirection: "column",
-        background:    "#16161e",
+        background:    "linear-gradient(180deg, #1e1e1e 0%, #111 100%)",
         overflowY:     "hidden",
       }}>
         <HistoryContent songs={songs} participants={participants} connected={connected} />
@@ -310,7 +310,7 @@ export default function History({ open, onClose, songs = [], participants = [], 
         transition:    "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         display:       "flex",
         flexDirection: "column",
-        background:    "#16161e",
+        background:    "linear-gradient(180deg, #1e1e1e 0%, #111 100%)",
         boxShadow:     "4px 0 28px rgba(0,0,0,0.7)",
       }}>
         <HistoryContent songs={songs} participants={participants} connected={connected} />

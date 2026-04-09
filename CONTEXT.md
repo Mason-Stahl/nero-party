@@ -90,13 +90,13 @@ ChatMessage — displayName denormalized so chat reads don't need a join
 - Host-only gear icon opens HostSettings overlay
 
 ### MiddleZone
-- **Both host and guest** see the same Queue carousel
-- Host additionally gets a 76px controls strip at the bottom rendering `<PlaybackControls>`
-- Tracks `focusedSong` state via `Queue.onFocusedChange` callback; passes it to PlaybackControls
+- **Both host and guest** see the same Queue carousel with a 76px controls strip at the bottom
+- Both paths track `focusedSong` via `Queue.onFocusedChange` and pass it to `<PlaybackControls>`
+- Host: full playback controls + VoteButton; Guest: VoteButton only
 - `handleSkipTo(targetSongId)` / `handleRewindTo(targetSongId)` POST to /advance and /rewind with the target in body
 
 ### BottomBar
-- History CircleBtn (left), AddSong (center), GroupChat CircleBtn (right)
+- SCOREBOARD CircleBtn (left, opens History slide-out), AddSong (center), GROUP CHAT CircleBtn (right)
 
 ## Queue carousel (frontend/src/components/Queue.jsx)
 - Shows all songs: history (left) ← now playing (center) → upcoming (right)
@@ -134,13 +134,14 @@ ChatMessage — displayName denormalized so chat reads don't need a join
 - `spinning` prop drives `vinyl-spin` CSS animation (defined in Queue.jsx's SPIN_CSS injection)
 
 ## PlaybackControls (frontend/src/components/PlaybackControls.jsx)
-- Context-aware host control strip; renders nothing for non-hosts
-- Three states driven by `focusedSong.status`:
-  - `queued` / `pending` → single **SKIP TO** CircleBtn (calls `onSkipTo(focusedSong.id)`)
-  - `played` → single **REWIND TO** CircleBtn (calls `onRewindTo(focusedSong.id)`)
-  - `playing` / `null` → full controls: APPROVE (if !autoAccept, with pending badge), REWIND, PAUSE/PLAY, NEXT, REJECT (if !autoAccept)
+- Renders for both host and guest; non-hosts see only the VoteButton
+- **VoteButton** sub-component: CircleBtn (star icon, label "VOTE"); on click opens a DarkPanel callout above it with StarRating + primary Btn submit; resets on focusedSong change; blocks own-song rating; shows "Rated ✓" if already submitted; only enabled for `playing` or `played` songs
+- Three host states driven by `focusedSong.status` (all include VoteButton):
+  - `queued` / `pending` → **SKIP TO** + VoteButton
+  - `played` → **REWIND TO** + VoteButton
+  - `playing` / `null` → full controls: APPROVE (if !autoAccept, with pending badge), REWIND, PAUSE/PLAY, NEXT, REJECT (if !autoAccept), VoteButton
 - All disabled states computed internally from `songs`, `history`, `loading`, `currentSong`
-- Contains all playback SVG icon definitions (IconRewind, IconPlay, IconPause, IconNext, IconCheck, IconX)
+- Contains all playback SVG icon definitions (IconRewind, IconPlay, IconPause, IconNext, IconCheck, IconX, IconStar)
 
 ## CircleBtn (frontend/src/components/CircleBtn.jsx)
 - 48×48 circular icon button; `disabled` prop dims + blocks clicks
@@ -157,15 +158,17 @@ ChatMessage — displayName denormalized so chat reads don't need a join
 - Props: autoAccept, onToggleAutoAccept, history, participants, onEndParty, onGoToStage
 
 ## History (frontend/src/components/Peripherals/History.jsx)
-- Guitar Hero 3 lined-paper slide-in drawer; left-side dog-ear tab
-- Tab top: 10% for host, vertically centered for guest
-- Songs listed chronologically; click to expand inline RatingBox
+- Left-side slide-out portal panel (360px); DarkPanel color scheme (`#1e1e1e → #111` gradient)
+- Scoreboard at top, then song list chronologically; click to expand inline RatingBox
 - RatingBox: shows artist + duration, "your song" badge, StarRating widget → POST /:songId/rate
 - StarRating: 0.5-step half-star widget (0.5–5.0 display = 1–10 DB int); readOnly mode for display
 - Header has EXPORT button via Playlist component (downloads playlist.json)
 
 ## GroupChat (frontend/src/components/Peripherals/GroupChat.jsx)
-- Right-side SlideDrawer panel (320px); own messages left (green), others right (dark purple)
+- Right-side portal slide-out (320px); DarkPanel color scheme (`#1e1e1e → #111` gradient)
+- Own messages: left-aligned, green-tinted bubble (`rgba(74,222,128,0.13)` + green border)
+- Other messages: right-aligned, neutral bubble (`rgba(255,255,255,0.07)`)
+- Header + input bar use `rgba(255,255,255,0.03)` tray background; send button uses green accent
 - Unread count increments while closed, resets on open, auto-scrolls to latest
 - Input + circular send button; Enter to send
 

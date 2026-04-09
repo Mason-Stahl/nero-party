@@ -7,6 +7,7 @@
 //   "scores" — only the chart (header + rows)
 
 import { useParty } from "../context/PartyContext";
+import Btn from "./Btn";
 
 const GOLD   = "#f5c518";
 const SILVER = "#b0b0b0";
@@ -143,28 +144,15 @@ export default function Scoreboard({
           }}>
             {connected ? "● live" : "○ connecting…"}
           </span>
-          {!inline && (
-            <button
+          {(!inline || onLeave) && (
+            <Btn
+              variant="danger"
+              size="sm"
               onClick={onLeave ?? (() => window.location.reload())}
-              style={{
-                marginLeft:    10,
-                padding:       "2px 8px",
-                background:    "rgba(255,255,255,0.07)",
-                border:        "1px solid rgba(255,255,255,0.15)",
-                borderRadius:  4,
-                cursor:        "pointer",
-                fontFamily:    "sans-serif",
-                fontSize:      9,
-                fontWeight:    700,
-                letterSpacing: "0.06em",
-                color:         "rgba(255,255,255,0.45)",
-                transition:    "background 0.15s, color 0.15s",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(248,113,113,0.18)"; e.currentTarget.style.color = "#f87171"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "rgba(255,255,255,0.45)"; }}
+              style={{ marginLeft: 10 }}
             >
               LEAVE
-            </button>
+            </Btn>
           )}
         </div>
       )}

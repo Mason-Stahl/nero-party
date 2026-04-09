@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useIsMobile } from "../lib/useIsMobile";
 import Btn from "../components/Btn";
 import GlassPanel from "../components/GlassPanel";
 import DarkPanel from "../components/DarkPanel";
@@ -13,20 +14,20 @@ const GREEN = "#4ade80";
 // size { w, h } in px, and blur in px. Opacity is baked into the rgba alpha.
 const BLOBS = [
   {
-    color: "rgba(74,222,128,0.05)",   // green
+    color: "rgba(74,222,128,0.02)",   // green
     top: "-15%", left: "50%",
     transform: "translateX(-45%)",
     w: 600, h: 400,
     blur: 100,
   },
   {
-    color: "rgba(139,92,246,0.05)",   // purple
+    color: "rgba(139,92,246,0.02)",   // purple
     bottom: "-10%", left: "-10%",
     w: 500, h: 400,
     blur: 100,
   },
   {
-    color: "rgba(34,211,238,0.05)",   // teal
+    color: "rgba(34,211,238,0.02)",   // teal
     bottom: "10%", right: "-5%",
     w: 380, h: 300,
     blur: 100,
@@ -49,6 +50,7 @@ function CardShell({ dark, style, children }) {
 }
 
 export default function LobbyPage({ onComplete }) {
+  const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [darkCards, setDarkCards] = useState(false);
 
@@ -156,12 +158,12 @@ export default function LobbyPage({ onComplete }) {
       <nav style={{
         display: "flex",
         alignItems: "center",
-        justifyContent: "center",
+        justifyContent: isMobile ? "flex-start" : "center",
         height: 64,
         borderBottom: "1px solid rgba(255,255,255,0.07)",
         flexShrink: 0,
         position: "relative",
-        padding: "0 24px",
+        padding: isMobile ? "0 0 0 5%" : "0 24px",
         zIndex: 10,
         background: "rgba(10,10,10,0.6)",
         backdropFilter: "blur(20px)",

@@ -52,16 +52,31 @@ export default function MiddleZone({
     if (p) apiCall("POST", `/parties/${partyId}/songs/${p.id}/reject`, {}, "reject");
   };
 
-  // ── Non-host: full carousel, no controls ──────────────────────────────────
+  // ── Non-host: carousel + vote button ─────────────────────────────────────
   if (!isHost) {
     return (
       <div style={{ position: "absolute", inset: 0, overflow: "visible" }}>
-        <Queue
-          songs={songs}
-          history={history}
-          isPaused={isPaused}
-          effectiveStartTime={effectiveStartTime}
-        />
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 76 }}>
+          <Queue
+            songs={songs}
+            history={history}
+            isPaused={isPaused}
+            effectiveStartTime={effectiveStartTime}
+            onFocusedChange={setFocusedSong}
+          />
+        </div>
+        <div style={{
+          position:   "absolute",
+          bottom:     0, left: 0, right: 0,
+          height:     76,
+          display:    "flex",
+          alignItems: "center",
+        }}>
+          <PlaybackControls
+            isHost={false}
+            focusedSong={focusedSong}
+          />
+        </div>
       </div>
     );
   }

@@ -1,6 +1,6 @@
 import { useParty } from "../../context/PartyContext";
-import Scoreboard from "../Scoreboard";
 import CircleBtn from "../CircleBtn";
+import Btn from "../Btn";
 
 const GearIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -10,31 +10,70 @@ const GearIcon = () => (
   </svg>
 );
 
-export default function TopBar({ songs, participants, connected, onLeave, onOpenSettings }) {
-  const { isHost } = useParty();
+export default function TopBar({ participants, connected, onLeave, onOpenSettings }) {
+  const { isHost, groupName, participantId } = useParty();
+  const displayName = participants.find((p) => p.id === participantId)?.displayName ?? "";
 
   return (
-    <div style={{ position: "absolute", inset: 0 }}>
-      <Scoreboard
-        songs={songs}
-        participants={participants}
-        connected={connected}
-        onLeave={onLeave}
-        section="status"
-      />
+    <>
+    <div style={{
+      position:             "absolute",
+      top: 0, left: 0, right: 0,
+      height:               60,
+      background:           "rgba(255,255,255,0.05)",
+      backdropFilter:       "blur(28px) saturate(160%)",
+      WebkitBackdropFilter: "blur(28px) saturate(160%)",
+      borderBottom:         "1px solid rgba(255,255,255,0.09)",
+      boxShadow:            "0 2px 20px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07)",
+      display:              "flex",
+      alignItems:           "center",
+      paddingLeft:          "10%",
+      paddingRight:         "10%",
+      gap:                  12,
+    }}>
 
-      {isHost && (
-        <div style={{
-          position:  "absolute",
-          right:     24,
-          top:       "50%",
-          transform: "translateY(-50%)",
-        }}>
-          <CircleBtn onClick={onOpenSettings} label="SETTINGS">
-            <GearIcon />
-          </CircleBtn>
-        </div>
-      )}
+      {/* Status text */}
+      <span style={{
+        flex: 1, minWidth: 0,
+        overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        fontFamily: "sans-serif", fontSize: 11,
+        fontWeight: 700, letterSpacing: "0.1em",
+        color: "rgba(255,255,255,0.5)",
+      }}>
+        {displayName} · {groupName?.toUpperCase()} · {participants.length} connected
+      </span>
+
+      {/* Live indicator */}
+      <span style={{
+        flexShrink: 0,
+        fontFamily: "sans-serif", fontSize: 11,
+        color: connected ? "rgb(34,197,94)" : "#f87171",
+      }}>
+        {connected ? "● live" : "○ connecting…"}
+      </span>
+
+      {/* LEAVE */}
+      <Btn
+        variant="danger"
+        size="sm"
+        onClick={onLeave ?? (() => window.location.reload())}
+      >
+        LEAVE
+      </Btn>
     </div>
+
+    {/* Gear — host only, below the bar */}
+    {isHost && (
+      <div style={{
+        position:  "absolute",
+        top:   80,
+        right: "10%",
+      }}>
+        <CircleBtn onClick={onOpenSettings} label="SETTINGS">
+          <GearIcon />
+        </CircleBtn>
+      </div>
+    )}
+    </>
   );
 }

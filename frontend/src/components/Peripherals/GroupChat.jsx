@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParty } from "../../context/PartyContext";
 
+const PANEL_BG  = "linear-gradient(180deg, #1e1e1e 0%, #111 100%)";
+const GREEN     = "rgba(74,222,128,0.85)";
+const GREEN_DIM = "rgba(74,222,128,0.13)";
+
 // ── MessageBubble ─────────────────────────────────────────────────────────────
 function MessageBubble({ message, isOwn }) {
   return (
@@ -26,7 +30,8 @@ function MessageBubble({ message, isOwn }) {
         maxWidth:     "76%",
         padding:      "7px 12px",
         borderRadius: isOwn ? "14px 14px 14px 4px" : "14px 14px 4px 14px",
-        background:   isOwn ? "#2d6a4f" : "#2c2c3e",
+        background:   isOwn ? GREEN_DIM : "rgba(255,255,255,0.07)",
+        border:       `1px solid ${isOwn ? "rgba(74,222,128,0.18)" : "rgba(255,255,255,0.07)"}`,
         color:        "#fff",
         fontSize:     13,
         fontFamily:   "sans-serif",
@@ -40,14 +45,13 @@ function MessageBubble({ message, isOwn }) {
 }
 
 // ── Shared chat content ────────────────────────────────────────────────────────
-// Used by both portal panel and mobile full-page.
-
 function ChatContent({ messages, onSendMessage, participantId, scrollOnUpdate }) {
-  const [input, setInput]   = useState("");
-  const messagesEndRef      = useRef(null);
+  const [input, setInput] = useState("");
+  const scrollerRef       = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages, scrollOnUpdate]);
 
   function handleSend() {
@@ -68,7 +72,7 @@ function ChatContent({ messages, onSendMessage, participantId, scrollOnUpdate })
         flexShrink:   0,
         padding:      "14px 16px 12px",
         borderBottom: "1px solid rgba(255,255,255,0.08)",
-        background:   "#1a1a2e",
+        background:   "rgba(255,255,255,0.03)",
         display:      "flex",
         alignItems:   "center",
         gap:          10,
@@ -80,14 +84,14 @@ function ChatContent({ messages, onSendMessage, participantId, scrollOnUpdate })
         </svg>
         <div style={{
           fontFamily: "sans-serif", fontSize: 12,
-          fontWeight: 700, letterSpacing: "0.1em", color: "#fff",
+          fontWeight: 700, letterSpacing: "0.1em", color: "rgba(255,255,255,0.85)",
         }}>
           GROUP CHAT
         </div>
       </div>
 
       {/* Messages */}
-      <div style={{
+      <div ref={scrollerRef} style={{
         flex: 1, overflowY: "auto", padding: "12px 0",
         display: "flex", flexDirection: "column",
       }}>
@@ -105,14 +109,17 @@ function ChatContent({ messages, onSendMessage, participantId, scrollOnUpdate })
               isOwn={msg.participantId === participantId} />
           ))
         )}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input */}
       <div style={{
-        flexShrink: 0, padding: "10px 12px",
-        borderTop: "1px solid rgba(255,255,255,0.08)",
-        background: "#1a1a2e", display: "flex", gap: 8, alignItems: "center",
+        flexShrink:  0,
+        padding:     "10px 12px",
+        borderTop:   "1px solid rgba(255,255,255,0.08)",
+        background:  "rgba(255,255,255,0.03)",
+        display:     "flex",
+        gap:         8,
+        alignItems:  "center",
       }}>
         <input
           value={input}
@@ -120,19 +127,30 @@ function ChatContent({ messages, onSendMessage, participantId, scrollOnUpdate })
           onKeyDown={handleKeyDown}
           placeholder="Message…"
           style={{
-            flex: 1, background: "rgba(255,255,255,0.07)",
-            border: "1px solid rgba(255,255,255,0.14)",
-            borderRadius: 20, padding: "8px 14px",
-            color: "#fff", fontFamily: "sans-serif", fontSize: 13, outline: "none",
+            flex:         1,
+            background:   "rgba(255,255,255,0.07)",
+            border:       "1px solid rgba(255,255,255,0.14)",
+            borderRadius: 20,
+            padding:      "8px 14px",
+            color:        "#fff",
+            fontFamily:   "sans-serif",
+            fontSize:     13,
+            outline:      "none",
           }}
         />
         <button onClick={handleSend} disabled={!input.trim()} style={{
-          width: 36, height: 36, borderRadius: "50%",
-          background: input.trim() ? "#2d6a4f" : "rgba(255,255,255,0.07)",
-          border: "none", cursor: input.trim() ? "pointer" : "default",
-          color: input.trim() ? "#fff" : "rgba(255,255,255,0.2)",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0, transition: "background 0.15s",
+          width:      36,
+          height:     36,
+          borderRadius: "50%",
+          background: input.trim() ? GREEN : "rgba(255,255,255,0.07)",
+          border:     "none",
+          cursor:     input.trim() ? "pointer" : "default",
+          color:      input.trim() ? "#000" : "rgba(255,255,255,0.2)",
+          display:    "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+          transition: "background 0.15s",
         }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -144,12 +162,9 @@ function ChatContent({ messages, onSendMessage, participantId, scrollOnUpdate })
 }
 
 // ── GroupChat — desktop: portal slide-out  /  mobile: full-page inline ─────────
-// Props: open, onClose, messages, onSendMessage, fullPage
-
 export default function GroupChat({ open, onClose, messages = [], onSendMessage, fullPage = false }) {
   const { participantId } = useParty();
 
-  // Mobile full-page: fills its container directly
   if (fullPage) {
     return (
       <div style={{
@@ -157,7 +172,7 @@ export default function GroupChat({ open, onClose, messages = [], onSendMessage,
         inset:         0,
         display:       "flex",
         flexDirection: "column",
-        background:    "#0f0f1a",
+        background:    PANEL_BG,
       }}>
         <ChatContent
           messages={messages}
@@ -169,7 +184,6 @@ export default function GroupChat({ open, onClose, messages = [], onSendMessage,
     );
   }
 
-  // Desktop: portal slide-out from right
   return createPortal(
     <>
       {open && (
@@ -186,8 +200,8 @@ export default function GroupChat({ open, onClose, messages = [], onSendMessage,
         transition:    "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         display:       "flex",
         flexDirection: "column",
-        background:    "#0f0f1a",
-        boxShadow:     "-4px 0 28px rgba(0,0,0,0.65)",
+        background:    PANEL_BG,
+        boxShadow:     "-4px 0 28px rgba(0,0,0,0.85), inset 1px 0 0 rgba(255,255,255,0.05)",
       }}>
         <ChatContent
           messages={messages}

@@ -27,13 +27,15 @@ const variants = {
   },
   danger: {
     base: {
-      background: "rgba(248,113,113,0.12)",
-      color: "#f87171",
-      border: "1px solid rgba(248,113,113,0.25)",
+      background: "rgba(255,255,255,0.07)",
+      color: "rgba(255,255,255,0.45)",
+      border: "1px solid rgba(255,255,255,0.12)",
     },
     hover: {
-      background: "rgba(248,113,113,0.22)",
-      boxShadow: "0 0 14px rgba(248,113,113,0.2)",
+      background: "rgba(248,113,113,0.18)",
+      color: "#f87171",
+      border: "1px solid rgba(248,113,113,0.28)",
+      boxShadow: "0 0 14px rgba(248,113,113,0.12)",
     },
   },
 };

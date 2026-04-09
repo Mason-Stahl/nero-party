@@ -191,7 +191,7 @@ export default function Queue({
 
       {/* HISTORY label — top-left */}
       <div style={{
-        position: "absolute", top: 0, left: "16%", height: 34,
+        position: "absolute", top: 0, left: "6%", height: 34,
         display: "flex", alignItems: "center",
         fontSize: 9, fontWeight: 700, letterSpacing: "0.14em",
         color: "rgba(255,255,255,0.2)", userSelect: "none", zIndex: 20,
@@ -201,7 +201,7 @@ export default function Queue({
 
       {/* UPCOMING label — top-right */}
       <div style={{
-        position: "absolute", top: 0, right: "16%", height: 34,
+        position: "absolute", top: 0, right: "6%", height: 34,
         display: "flex", alignItems: "center",
         fontSize: 9, fontWeight: 700, letterSpacing: "0.14em",
         color: "rgba(255,255,255,0.2)", userSelect: "none", zIndex: 20,

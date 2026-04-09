@@ -36,8 +36,8 @@ export default function BottomBar({ messages, onSendMessage, partyEnded, songs, 
       gap:             16,
     }}>
 
-      {/* Vote button */}
-      <CircleBtn onClick={handleVoteToggle} label="VOTE">
+      {/* Scoreboard button */}
+      <CircleBtn onClick={handleVoteToggle} label="SCOREBOARD">
         {/* trophy icon */}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
