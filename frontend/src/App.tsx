@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 // @ts-ignore
 import LobbyPage from "./pages/LobbyPage";
 // @ts-ignore
+import JoinByLinkPage from "./pages/JoinByLinkPage";
+// @ts-ignore
 import StagePage from "./pages/StagePage";
 // @ts-ignore
 import HostSettings from "./pages/HostSettings";
@@ -16,11 +18,20 @@ function loadSession() {
   catch { return null; }
 }
 
-type AppPage = "intro" | "host-settings" | "stage";
+// Parse /join/:code from the URL path, returns the code or null
+function parseJoinCode(): string | null {
+  const m = window.location.pathname.match(/^\/join\/([A-Za-z0-9]+)\/?$/);
+  return m ? m[1].toUpperCase() : null;
+}
+
+type AppPage = "intro" | "join-link" | "host-settings" | "stage";
 
 export default function App() {
   const saved                   = loadSession();
-  const [page,     setPage]     = useState<AppPage>(saved ? (saved.isHost ? "host-settings" : "stage") : "intro");
+  const linkCode                = parseJoinCode();
+  const [page,     setPage]     = useState<AppPage>(
+    saved ? (saved.isHost ? "host-settings" : "stage") : linkCode ? "join-link" : "intro"
+  );
   const [fadeOut,  setFadeOut]  = useState(false);
   const [hostData, setHostData] = useState<any>(saved);
 
@@ -55,6 +66,7 @@ export default function App() {
   return (
     <>
       {page === "intro" && <LobbyPage onComplete={handleIntroComplete} />}
+      {page === "join-link" && <JoinByLinkPage joinCode={linkCode} onComplete={handleIntroComplete} />}
       {page === "host-settings" && (
         <PartyProvider data={hostData}>
           <HostSettings onGoToStage={handleGoToStage} />

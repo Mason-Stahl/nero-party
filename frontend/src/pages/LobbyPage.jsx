@@ -187,7 +187,7 @@ export default function LobbyPage({ onComplete }) {
 
         <div style={{
           position: "absolute",
-          top: "20%",
+          top: isMobile ? "10%" : "20%",
           left: "50%",
           transform: "translateX(-50%)",
           width: "calc(100% - 32px)",
@@ -200,7 +200,7 @@ export default function LobbyPage({ onComplete }) {
 
 
 
-        {/* Card style toggle */}
+        {/* Card style toggle 
         <div style={{ display: "flex", alignItems: "center", gap: 6, alignSelf: "flex-end" }}>
           <span style={{ fontSize: 10, letterSpacing: "0.12em", color: "rgba(255,255,255,0.25)" }}>CARD</span>
           {["glass", "dark"].map((mode) => (
@@ -225,7 +225,7 @@ export default function LobbyPage({ onComplete }) {
             </button>
           ))}
         </div>
-
+*/}
         {/* Name card — always visible */}
         <CardShell dark={darkCards} style={{ padding: "20px 24px" }}>
           <Label>YOUR NAME</Label>

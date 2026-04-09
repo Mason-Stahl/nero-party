@@ -239,58 +239,63 @@ router.post("/advance", async (req: Request<P>, res) => {
   const { partyId }                    = req.params;
   const { participantId, targetSongId } = req.body;
 
-  const party = await prisma.party.findUnique({ where: { id: partyId } });
-  if (!party) return res.status(404).json({ error: "Party not found" });
+  try {
+    const party = await prisma.party.findUnique({ where: { id: partyId } });
+    if (!party) return res.status(404).json({ error: "Party not found" });
 
-  const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
-  if (!participant || participant.displayName !== party.hostName) {
-    return res.status(403).json({ error: "Only the host can advance the queue" });
-  }
+    const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+    if (!participant || participant.displayName !== party.hostName) {
+      return res.status(403).json({ error: "Only the host can advance the queue" });
+    }
 
-  if (targetSongId) {
-    // Skip-to: jump directly to a specific future song
-    const target = await prisma.song.findFirst({ where: { id: targetSongId, partyId, status: "queued" } });
-    if (!target) return res.status(409).json({ error: "Target song not queued" });
+    if (targetSongId) {
+      // Skip-to: jump directly to a specific future song
+      const target = await prisma.song.findFirst({ where: { id: targetSongId, partyId, status: "queued" } });
+      if (!target) return res.status(409).json({ error: "Target song not queued" });
 
-    await prisma.song.updateMany({ where: { partyId, status: "playing" }, data: { status: "played" } });
-    // Mark all queued songs created before the target as played (skipped over)
+      await prisma.song.updateMany({ where: { partyId, status: "playing" }, data: { status: "played", startedAt: new Date() } });
+      // Mark all queued songs created before the target as played (skipped over)
+      await prisma.song.updateMany({
+        where: { partyId, status: "queued", createdAt: { lt: target.createdAt } },
+        data:  { status: "played", startedAt: new Date() },
+      });
+      const now = new Date();
+      await prisma.song.update({ where: { id: target.id }, data: { status: "playing", startedAt: now } });
+      initPlayback(partyId, now);
+      broadcastPlayback(partyId);
+      await broadcastHistory(partyId);
+      await broadcastQueue(partyId);
+      return res.json({ playing: target });
+    }
+
+    // Normal advance: mark current playing as played, promote next queued
     await prisma.song.updateMany({
-      where: { partyId, status: "queued", createdAt: { lt: target.createdAt } },
-      data:  { status: "played" },
+      where: { partyId, status: "playing" },
+      data:  { status: "played", startedAt: new Date() },
     });
-    const now = new Date();
-    await prisma.song.update({ where: { id: target.id }, data: { status: "playing", startedAt: now } });
-    initPlayback(partyId, now);
-    broadcastPlayback(partyId);
     await broadcastHistory(partyId);
-    await broadcastQueue(partyId);
-    return res.json({ playing: target });
-  }
 
-  // Normal advance: mark current playing as played, promote next queued
-  await prisma.song.updateMany({
-    where: { partyId, status: "playing" },
-    data:  { status: "played" },
-  });
-  await broadcastHistory(partyId);
-
-  const next = await prisma.song.findFirst({
-    where:   { partyId, status: "queued" },
-    orderBy: { position: "asc" },
-  });
-
-  if (next) {
-    const now = new Date();
-    await prisma.song.update({
-      where: { id: next.id },
-      data:  { status: "playing", startedAt: now },
+    const next = await prisma.song.findFirst({
+      where:   { partyId, status: "queued" },
+      orderBy: { position: "asc" },
     });
-    initPlayback(partyId, now);
-    broadcastPlayback(partyId);
-  }
 
-  await broadcastQueue(partyId);
-  return res.json({ playing: next ?? null });
+    if (next) {
+      const now = new Date();
+      await prisma.song.update({
+        where: { id: next.id },
+        data:  { status: "playing", startedAt: now },
+      });
+      initPlayback(partyId, now);
+      broadcastPlayback(partyId);
+    }
+
+    await broadcastQueue(partyId);
+    return res.json({ playing: next ?? null });
+  } catch (err) {
+    console.error("advance error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // POST /parties/:partyId/songs/rewind — go back (host only)
@@ -299,59 +304,156 @@ router.post("/rewind", async (req: Request<P>, res) => {
   const { partyId }                    = req.params;
   const { participantId, targetSongId } = req.body;
 
-  const party = await prisma.party.findUnique({ where: { id: partyId } });
-  if (!party) return res.status(404).json({ error: "Party not found" });
+  try {
+    const party = await prisma.party.findUnique({ where: { id: partyId } });
+    if (!party) return res.status(404).json({ error: "Party not found" });
 
-  const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
-  if (!participant || participant.displayName !== party.hostName) {
-    return res.status(403).json({ error: "Only the host can rewind" });
-  }
+    const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+    if (!participant || participant.displayName !== party.hostName) {
+      return res.status(403).json({ error: "Only the host can rewind" });
+    }
 
-  if (targetSongId) {
-    // Rewind-to: jump back to a specific played song
-    const target = await prisma.song.findFirst({ where: { id: targetSongId, partyId, status: "played" } });
-    if (!target) return res.status(409).json({ error: "Target song not in history" });
+    if (targetSongId) {
+      // Rewind-to: jump back to a specific played song
+      const target = await prisma.song.findFirst({ where: { id: targetSongId, partyId, status: "played" } });
+      if (!target) return res.status(409).json({ error: "Target song not in history" });
 
-    // Current playing → queued
-    await prisma.song.updateMany({ where: { partyId, status: "playing" }, data: { status: "queued", startedAt: null } });
-    // All played songs at or after target → queued (restores target + everything played since)
+      // Current playing → queued
+      await prisma.song.updateMany({ where: { partyId, status: "playing" }, data: { status: "queued", startedAt: null } });
+      // All played songs at or after target (by position, falling back to startedAt) → queued
+      await prisma.song.updateMany({
+        where: { partyId, status: "played", position: { gte: target.position } },
+        data:  { status: "queued", startedAt: null },
+      });
+      const now = new Date();
+      await prisma.song.update({ where: { id: target.id }, data: { status: "playing", startedAt: now } });
+      initPlayback(partyId, now);
+      broadcastPlayback(partyId);
+      await broadcastQueue(partyId);
+      await broadcastHistory(partyId);
+      return res.json({ ok: true });
+    }
+
+    // Normal rewind: one step back
+    const lastPlayed = await prisma.song.findFirst({
+      where:   { partyId, status: "played" },
+      orderBy: { startedAt: "desc" },
+    });
+    if (!lastPlayed) return res.status(409).json({ error: "No previous song" });
+
     await prisma.song.updateMany({
-      where: { partyId, status: "played", startedAt: { gte: target.startedAt } },
+      where: { partyId, status: "playing" },
       data:  { status: "queued", startedAt: null },
     });
+
     const now = new Date();
-    await prisma.song.update({ where: { id: target.id }, data: { status: "playing", startedAt: now } });
+    await prisma.song.update({
+      where: { id: lastPlayed.id },
+      data:  { status: "playing", startedAt: now },
+    });
+
     initPlayback(partyId, now);
     broadcastPlayback(partyId);
     await broadcastQueue(partyId);
     await broadcastHistory(partyId);
+
     return res.json({ ok: true });
+  } catch (err) {
+    console.error("rewind error:", err);
+    return res.status(500).json({ error: "Internal server error" });
   }
+});
 
-  // Normal rewind: one step back
-  const lastPlayed = await prisma.song.findFirst({
-    where:   { partyId, status: "played" },
-    orderBy: { startedAt: "desc" },
-  });
-  if (!lastPlayed) return res.status(409).json({ error: "No previous song" });
+// ── Shared helper: insert song at the next queue position (right after now-playing) ──
+// Works for any song status (history, queued, pending).
+// Returns the now-playing song (may be null) for callers that need it.
+async function insertSongAsNext(partyId: string, songId: string) {
+  const playing    = await prisma.song.findFirst({ where: { partyId, status: "playing" } });
+  const playingPos = playing?.position ?? 0;
 
+  // Shift every queued/pending song's position up by 1 to make room
   await prisma.song.updateMany({
-    where: { partyId, status: "playing" },
-    data:  { status: "queued", startedAt: null },
+    where: { partyId, status: { in: ["queued", "pending"] } },
+    data:  { position: { increment: 1 } },
   });
 
-  const now = new Date();
+  // Place the target song at the slot right after the now-playing song
   await prisma.song.update({
-    where: { id: lastPlayed.id },
-    data:  { status: "playing", startedAt: now },
+    where: { id: songId },
+    data:  { status: "queued", position: playingPos + 1, startedAt: null },
   });
 
-  initPlayback(partyId, now);
-  broadcastPlayback(partyId);
-  await broadcastQueue(partyId);
-  await broadcastHistory(partyId);
+  return playing;
+}
 
-  return res.json({ ok: true });
+// POST /parties/:partyId/songs/:songId/queue-next — insert song as next-up (host only)
+router.post("/:songId/queue-next", async (req: Request<P & { songId: string }>, res) => {
+  const { partyId, songId } = req.params;
+  const { participantId }   = req.body;
+  try {
+    const party = await prisma.party.findUnique({ where: { id: partyId } });
+    if (!party) return res.status(404).json({ error: "Party not found" });
+
+    const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+    if (!participant || participant.displayName !== party.hostName) {
+      return res.status(403).json({ error: "Only the host can reorder the queue" });
+    }
+
+    const song = await prisma.song.findFirst({ where: { id: songId, partyId } });
+    if (!song || song.status === "playing" || song.status === "banned") {
+      return res.status(409).json({ error: "Song cannot be queued" });
+    }
+
+    await insertSongAsNext(partyId, songId);
+    await broadcastQueue(partyId);
+    await broadcastHistory(partyId);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("queue-next error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// POST /parties/:partyId/songs/:songId/play-now — insert as next AND advance to it (host only)
+router.post("/:songId/play-now", async (req: Request<P & { songId: string }>, res) => {
+  const { partyId, songId } = req.params;
+  const { participantId }   = req.body;
+  try {
+    const party = await prisma.party.findUnique({ where: { id: partyId } });
+    if (!party) return res.status(404).json({ error: "Party not found" });
+
+    const participant = await prisma.participant.findFirst({ where: { id: participantId, partyId } });
+    if (!participant || participant.displayName !== party.hostName) {
+      return res.status(403).json({ error: "Only the host can control playback" });
+    }
+
+    const song = await prisma.song.findFirst({ where: { id: songId, partyId } });
+    if (!song || song.status === "playing" || song.status === "banned") {
+      return res.status(409).json({ error: "Song cannot be played" });
+    }
+
+    const playing = await insertSongAsNext(partyId, songId);
+
+    // Mark the current song as played
+    if (playing) {
+      await prisma.song.update({
+        where: { id: playing.id },
+        data:  { status: "played", startedAt: playing.startedAt ?? new Date() },
+      });
+    }
+
+    // Start the target song
+    const now = new Date();
+    await prisma.song.update({ where: { id: songId }, data: { status: "playing", startedAt: now } });
+    initPlayback(partyId, now);
+    broadcastPlayback(partyId);
+    await broadcastHistory(partyId);
+    await broadcastQueue(partyId);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("play-now error:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // POST /parties/:partyId/songs/:songId/approve — approve a pending song (host only)
@@ -370,13 +472,19 @@ router.post("/:songId/approve", async (req: Request<P & { songId: string }>, res
   const song = await prisma.song.findFirst({ where: { id: songId, partyId, status: "pending" } });
   if (!song) return res.status(404).json({ error: "Pending song not found" });
 
-  const updated = await prisma.song.update({
-    where: { id: songId },
-    data:  { status: "queued" },
-  });
+  await prisma.song.update({ where: { id: songId }, data: { status: "queued" } });
+
+  // Auto-start: if nothing is playing, promote immediately
+  const alreadyPlaying = await prisma.song.findFirst({ where: { partyId, status: "playing" } });
+  if (!alreadyPlaying) {
+    const now = new Date();
+    await prisma.song.update({ where: { id: songId }, data: { status: "playing", startedAt: now } });
+    initPlayback(partyId, now);
+    broadcastPlayback(partyId);
+  }
 
   await broadcastQueue(partyId);
-  return res.json(updated);
+  return res.json({ ok: true });
 });
 
 // POST /parties/:partyId/songs/:songId/reject — reject a pending song (host only)
@@ -478,7 +586,7 @@ router.post("/:songId/rate", async (req: Request<P & { songId: string }>, res) =
   if (!participant) return res.status(403).json({ error: "Not a member of this party" });
 
   const song = await prisma.song.findFirst({ where: { id: songId, partyId, status: "played" } });
-  if (!song) return res.status(404).json({ error: "Song not found or not played yet" });
+  if (!song) return res.status(404).json({ error: "Please wait until song is finished" });
 
   if (song.addedByParticipantId === participantId) {
     return res.status(403).json({ error: "Cannot rate your own song" });

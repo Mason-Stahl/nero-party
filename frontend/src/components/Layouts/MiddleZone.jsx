@@ -38,18 +38,18 @@ export default function MiddleZone({
   const handlePauseResume = () =>
     apiCall("POST", `/parties/${partyId}/songs/${isPaused ? "resume" : "pause"}`, {}, "pauseResume");
 
-  const handleAdvance  = () => apiCall("POST", `/parties/${partyId}/songs/advance`, {}, "advance");
-  const handleRewind   = () => apiCall("POST", `/parties/${partyId}/songs/rewind`,  {}, "rewind");
-  const handleSkipTo   = (targetSongId) => apiCall("POST", `/parties/${partyId}/songs/advance`, { targetSongId }, "advance");
-  const handleRewindTo = (targetSongId) => apiCall("POST", `/parties/${partyId}/songs/rewind`,  { targetSongId }, "rewind");
+  const handleAdvance   = () => apiCall("POST", `/parties/${partyId}/songs/advance`, {}, "advance");
+  const handleRewind    = () => apiCall("POST", `/parties/${partyId}/songs/rewind`,  {}, "rewind");
+  const handleQueueNext = (songId) => apiCall("POST", `/parties/${partyId}/songs/${songId}/queue-next`, {}, "queueNext");
+  const handlePlayNow   = (songId) => apiCall("POST", `/parties/${partyId}/songs/${songId}/play-now`,   {}, "playNow");
 
-  const handleApprove = () => {
-    const p = songs.find((s) => s.status === "pending");
-    if (p) apiCall("POST", `/parties/${partyId}/songs/${p.id}/approve`, {}, "approve");
+  const handleApprove = (songId) => {
+    const id = songId ?? songs.find((s) => s.status === "pending")?.id;
+    if (id) apiCall("POST", `/parties/${partyId}/songs/${id}/approve`, {}, "approve");
   };
-  const handleReject = () => {
-    const p = songs.find((s) => s.status === "pending");
-    if (p) apiCall("POST", `/parties/${partyId}/songs/${p.id}/reject`, {}, "reject");
+  const handleReject = (songId) => {
+    const id = songId ?? songs.find((s) => s.status === "pending")?.id;
+    if (id) apiCall("POST", `/parties/${partyId}/songs/${id}/reject`, {}, "reject");
   };
 
   // ── Non-host: carousel + vote button ─────────────────────────────────────
@@ -84,7 +84,6 @@ export default function MiddleZone({
   // ── Host: carousel + context-aware controls ───────────────────────────────
   return (
     <div style={{ position: "absolute", inset: 0, overflow: "visible" }}>
-      {/* Carousel fills space above controls */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 76 }}>
         <Queue
           songs={songs}
@@ -95,7 +94,6 @@ export default function MiddleZone({
         />
       </div>
 
-      {/* Context-aware playback controls */}
       <div style={{
         position:    "absolute",
         bottom:      0, left: 0, right: 0,
@@ -117,8 +115,8 @@ export default function MiddleZone({
           onRewind={handleRewind}
           onApprove={handleApprove}
           onReject={handleReject}
-          onSkipTo={handleSkipTo}
-          onRewindTo={handleRewindTo}
+          onQueueNext={handleQueueNext}
+          onPlayNow={handlePlayNow}
         />
       </div>
     </div>

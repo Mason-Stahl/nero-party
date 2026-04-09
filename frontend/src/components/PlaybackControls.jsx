@@ -45,6 +45,19 @@ const IconStar = () => (
     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
   </svg>
 );
+const IconPlayNext = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+    <path d="M6 18l8.5-6L6 6v12z" opacity=".5"/>
+    <path d="M13 6v12l8.5-6L13 6z"/>
+    <rect x="2.5" y="11" width="5" height="2" rx="1"/>
+  </svg>
+);
+const IconPlayNow = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+    <path d="M8 5v14l11-7z"/>
+    <rect x="3" y="5" width="2" height="14" rx="1"/>
+  </svg>
+);
 
 // ── VoteButton ────────────────────────────────────────────────────────────────
 
@@ -183,8 +196,8 @@ export default function PlaybackControls({
   onRewind,
   onApprove,
   onReject,
-  onSkipTo,       // (songId) → skip queue to this specific future song
-  onRewindTo,     // (songId) → rewind queue to this specific past song
+  onQueueNext,    // (songId) → insert song as next-up without advancing
+  onPlayNow,      // (songId) → insert song as next-up AND advance immediately
 }) {
   // ── Non-host: vote button only ────────────────────────────────────────────
   if (!isHost) {
@@ -197,32 +210,46 @@ export default function PlaybackControls({
 
   const status = focusedSong?.status;
 
-  // ── Future song focused → SKIP TO ─────────────────────────────────────────
-  if (status === "queued" || status === "pending") {
+  // ── Pending song focused (manual mode) → APPROVE / REJECT ───────────────
+  if (status === "pending") {
     return (
       <div style={ROW}>
         <CircleBtn
-          onClick={() => onSkipTo(focusedSong.id)}
-          label="SKIP TO"
-          disabled={!!loading.advance}
+          onClick={() => onApprove(focusedSong.id)}
+          label="APPROVE"
+          disabled={!!loading.approve}
         >
-          <IconNext />
+          <IconCheck />
+        </CircleBtn>
+        <CircleBtn
+          onClick={() => onReject(focusedSong.id)}
+          label="REJECT"
+          disabled={!!loading.reject}
+        >
+          <IconX />
         </CircleBtn>
         <VoteButton focusedSong={focusedSong} />
       </div>
     );
   }
 
-  // ── Past song focused → REWIND TO ─────────────────────────────────────────
-  if (status === "played") {
+  // ── Queued or played song focused → PLAY NEXT / PLAY NOW ────────────────
+  if (status === "queued" || status === "played") {
     return (
       <div style={ROW}>
         <CircleBtn
-          onClick={() => onRewindTo(focusedSong.id)}
-          label="REWIND TO"
-          disabled={!!loading.rewind}
+          onClick={() => onPlayNow(focusedSong.id)}
+          label="PLAY NOW"
+          disabled={!!loading.playNow}
         >
-          <IconRewind />
+          <IconPlayNow />
+        </CircleBtn>
+        <CircleBtn
+          onClick={() => onQueueNext(focusedSong.id)}
+          label="PLAY NEXT"
+          disabled={!!loading.queueNext}
+        >
+          <IconPlayNext />
         </CircleBtn>
         <VoteButton focusedSong={focusedSong} />
       </div>
@@ -244,6 +271,16 @@ export default function PlaybackControls({
           badge={pendingSongs.length}
         >
           <IconCheck />
+        </CircleBtn>
+      )}
+
+      {!autoAccept && (
+        <CircleBtn
+          onClick={onReject}
+          label="REJECT"
+          disabled={!pendingSong || !!loading.reject}
+        >
+          <IconX />
         </CircleBtn>
       )}
 
@@ -270,16 +307,6 @@ export default function PlaybackControls({
       >
         <IconNext />
       </CircleBtn>
-
-      {!autoAccept && (
-        <CircleBtn
-          onClick={onReject}
-          label="REJECT"
-          disabled={!pendingSong || !!loading.reject}
-        >
-          <IconX />
-        </CircleBtn>
-      )}
 
       <VoteButton focusedSong={focusedSong} />
     </div>

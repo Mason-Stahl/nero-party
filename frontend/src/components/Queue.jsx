@@ -116,8 +116,11 @@ export default function Queue({
   const cardSize     = useCardSize();
 
   // Always: history (oldest→newest) | playing | queued (next-up first)
-  const played  = history
-    .slice()
+  // Exclude from played any song that already appears in songs (avoids duplicates
+  // during the brief window between queue-updated and history-updated after rewind/advance)
+  const songIds  = new Set(songs.map((s) => s.id));
+  const played   = history
+    .filter((s) => !songIds.has(s.id))
     .sort((a, b) => new Date(a.startedAt ?? a.createdAt) - new Date(b.startedAt ?? b.createdAt));
   const playing = songs.find((s) => s.status === "playing") ?? null;
   const queued  = songs
@@ -139,21 +142,21 @@ export default function Queue({
     return idx >= 0 ? idx : Math.max(0, nowIdx);
   })();
 
-  // Auto-follow now-playing only when the user was already at the now-playing card
+  // Always snap to the now-playing card when the playing song changes
   useEffect(() => {
     if (!playing) return;
-    const userWasAtNow = !focusedId || focusedId === prevPlayingId.current;
-    if (userWasAtNow) setFocusedId(playing.id);
+    setFocusedId(playing.id);
     prevPlayingId.current = playing.id;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing?.id]);
 
-  // Notify parent whenever the focused song changes
-  const focusedSong = allSongs[focusedIdx] ?? null;
-  const prevFocusedId = useRef(focusedSong?.id);
+  // Notify parent whenever the focused song or its status changes
+  const focusedSong   = allSongs[focusedIdx] ?? null;
+  const prevFocusedRef = useRef({ id: focusedSong?.id, status: focusedSong?.status });
   useEffect(() => {
-    if (focusedSong?.id !== prevFocusedId.current) {
-      prevFocusedId.current = focusedSong?.id;
+    const prev = prevFocusedRef.current;
+    if (focusedSong?.id !== prev.id || focusedSong?.status !== prev.status) {
+      prevFocusedRef.current = { id: focusedSong?.id, status: focusedSong?.status };
       onFocusedChange?.(focusedSong);
     }
   });

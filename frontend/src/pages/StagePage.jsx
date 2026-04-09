@@ -28,20 +28,20 @@ const BLOBS = (
     <div style={{
       position: "absolute", top: "-10%", left: "50%", transform: "translateX(-50%)",
       width: 600, height: 600,
-      background: "radial-gradient(circle, rgba(74,222,128,0.05), transparent 70%)",
-      filter: "blur(40px)",
+      background: "radial-gradient(circle, rgba(74,222,128,0.02), transparent 70%)",
+      filter: "blur(100px)",
     }} />
     <div style={{
       position: "absolute", bottom: "-10%", left: "-5%",
       width: 500, height: 500,
-      background: "radial-gradient(circle, rgba(120,80,255,0.05), transparent 70%)",
-      filter: "blur(40px)",
+      background: "radial-gradient(circle, rgba(120,80,255,0.02), transparent 70%)",
+      filter: "blur(100px)",
     }} />
     <div style={{
       position: "absolute", bottom: "-10%", right: "-5%",
       width: 500, height: 500,
-      background: "radial-gradient(circle, rgba(34,211,238,0.05), transparent 70%)",
-      filter: "blur(40px)",
+      background: "radial-gradient(circle, rgba(34,211,238,0.02), transparent 70%)",
+      filter: "blur(100px)",
     }} />
   </div>
 );
@@ -127,7 +127,7 @@ export default function StagePage({ onLeave }) {
     socket.on("playback-updated",     setPlayback);
     socket.on("history-updated",      setHistory);
     socket.on("chat-message",         (msg) => setMessages((prev) => [...prev, msg]));
-    socket.on("party-ended",          () => setPartyEnded(true));
+    socket.on("party-ended",          () => { setPartyEnded(true); setShowWinner(true); });
     socket.on("disconnect",           () => setConnected(false));
 
     return () => socket.disconnect();
